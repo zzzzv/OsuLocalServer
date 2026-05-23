@@ -42,6 +42,8 @@ try
 
     var app = builder.Build();
 
+    app.UseCors();
+
     // Resolve osu! path at startup; exit if not found
     var osuRootPath = ServerConfig.ResolveOsuRootPath(builder.Configuration);
 

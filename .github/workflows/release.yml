@@ -74,6 +74,7 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ steps.versions.outputs.tag }}"
+          git fetch --tags origin
           if (git tag | Select-String "^$tag$") {
             Write-Host "Release $tag already exists, skipping."
             return
