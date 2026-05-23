@@ -10,7 +10,17 @@ Local HTTP servers that expose osu! game data via REST APIs. Two projects:
 | Method | Route | Parameters | Description |
 | ------ | ----- | ---------- | ----------- |
 | GET | `/api/status` | — | Server status and osu! root path |
-| GET | `/files/{**relativePath}` | — | Serve any file from the osu! directory |
+| GET | `/files/{**relativePath}` | — | Serve any file from the osu! directory. Use `*` as a wildcard in any path segment to match files without knowing the exact name. The first match is returned with its real filename. |
+
+Examples:
+
+```http
+# Exact match (original behaviour)
+GET /files/Data/r/7b143bd479e4284d1b219afd6e69615d-134239924909535197.osr
+
+# Wildcard match – * matches any characters (returns the file above)
+GET /files/Data/r/7b143bd479e4284d1b219afd6e69615d-*.osr
+```
 
 ## API — Lazer (port 5048)
 

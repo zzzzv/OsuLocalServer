@@ -61,14 +61,25 @@ try
         if (string.IsNullOrWhiteSpace(relativePath))
             return Results.BadRequest("Relative file path is required.");
 
-        var filePath = Utils.ResolveFilePath(osuRootPath, relativePath);
-        if (filePath is null)
-            return Results.BadRequest("Invalid file path.");
+        string? filePath;
 
-        if (!File.Exists(filePath))
+        if (relativePath.Contains('*'))
+        {
+            // Wildcard in path → search filesystem, first hit wins
+            filePath = Utils.ResolveFilePathWithWildcard(osuRootPath, relativePath);
+        }
+        else
+        {
+            // Exact match (original behaviour)
+            filePath = Utils.ResolveFilePath(osuRootPath, relativePath);
+            if (filePath is null)
+                return Results.BadRequest("Invalid file path.");
+        }
+
+        if (filePath is null || !File.Exists(filePath))
             return Results.NotFound();
 
-        return Results.File(filePath, Utils.GetContentType(filePath), enableRangeProcessing: true);
+        return Results.File(filePath, Utils.GetContentType(filePath), Path.GetFileName(filePath));
     });
 
     app.Run();
