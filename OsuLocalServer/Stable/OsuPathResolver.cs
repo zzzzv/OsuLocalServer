@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Win32;
 
-public static class Utils
+namespace OsuLocalServer.Stable;
+
+public static class OsuPathResolver
 {
-    private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
     private static readonly string[] RegistryPaths =
     [
         @"HKEY_CLASSES_ROOT\osustable.File.osz\Shell\Open\Command",
@@ -15,21 +15,15 @@ public static class Utils
         foreach (var registryPath in RegistryPaths)
         {
             if (Registry.GetValue(registryPath, null, null) is not string command || string.IsNullOrWhiteSpace(command))
-            {
                 continue;
-            }
 
             var executablePath = ExtractExecutablePath(command);
             if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
-            {
                 continue;
-            }
 
             var directoryPath = Path.GetDirectoryName(executablePath);
             if (IsValidOsuRoot(directoryPath))
-            {
                 return Path.GetFullPath(directoryPath!);
-            }
         }
 
         return null;
@@ -38,9 +32,7 @@ public static class Utils
     public static bool IsValidOsuRoot(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
-        {
             return false;
-        }
 
         try
         {
@@ -75,9 +67,7 @@ public static class Utils
             .TrimStart(Path.DirectorySeparatorChar);
 
         if (string.IsNullOrWhiteSpace(normalizedRelativePath))
-        {
             return null;
-        }
 
         var fullRootPath = Path.GetFullPath(osuRootPath)
             .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
@@ -86,13 +76,6 @@ public static class Utils
         return fullPath.StartsWith(fullRootPath, StringComparison.OrdinalIgnoreCase)
             ? fullPath
             : null;
-    }
-
-    public static string GetContentType(string filePath)
-    {
-        return ContentTypeProvider.TryGetContentType(filePath, out var contentType)
-            ? contentType
-            : "application/octet-stream";
     }
 
     /// <summary>

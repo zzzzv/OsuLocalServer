@@ -1,66 +1,12 @@
 # OsuLocalServer
 
-Local HTTP servers that expose osu! game data via REST APIs. Two projects:
+osu本地数据服务，供 web 端使用以增强功能
 
-- **Stable** — serves files from the osu!stable installation directory
-- **Lazer** — queries Realm database from osu!lazer installation
-
-## API — Stable (port 5167)
-
-| Method | Route | Parameters | Description |
-| ------ | ----- | ---------- | ----------- |
-| GET | `/api/status` | — | Server status and osu! root path |
-| GET | `/files/{**relativePath}` | — | Serve any file from the osu! directory. Use `*` as a wildcard in any path segment to match files without knowing the exact name. The first match is returned with its real filename. |
-
-Examples:
-
-```http
-# Exact match (original behaviour)
-GET /files/Data/r/7b143bd479e4284d1b219afd6e69615d-134239924909535197.osr
-
-# Wildcard match – * matches any characters (returns the file above)
-GET /files/Data/r/7b143bd479e4284d1b219afd6e69615d-*.osr
-```
-
-## API — Lazer (port 5048)
-
-All query endpoints accept RQL (Realm Query Language) strings and an optional `depth` parameter for nested object expansion (`depth=0` by default, returns only value types and strings).
-
-| Method | Route | Parameters | Description |
-| ------ | ----- | ---------- | ----------- |
-| GET | `/api/status` | — | Server status and data directory |
-| GET | `/api/scores` | `rql`, `depth` | Query `ScoreInfo` |
-| GET | `/api/beatmaps` | `rql`, `depth` | Query `BeatmapInfo` |
-| GET | `/api/beatmap-sets` | `rql`, `depth` | Query `BeatmapSetInfo` |
-| GET | `/api/collections` | `rql`, `depth` | Query `BeatmapCollection` |
-| GET | `/files/{hash}` | — | Serve file by content hash from `<DataDirectory>/files/` |
-
-At `depth=0`, only value types (int, long, double, bool, Guid, DateTimeOffset, enums, etc.) and strings are included. At `depth>0`, nested `RealmObject` references and `IList<T>` collections are recursively expanded as dictionaries.
-
-## Configuration
-
-The config file is created automatically on first launch with default values. Edit it to override settings:
-
-### Stable (`Stable/OsuLocalServer.Stable.json`)
-
-```json
-{
-  "Urls": "http://localhost:5167",
-  "AppSettings": {
-    "OsuRootPath": null               // auto-detected from registry if null
-  }
-}
-```
-
-### Lazer (`Lazer/OsuLocalServer.Lazer.json`)
-
-```json
-{
-  "Urls": "http://localhost:5048",
-  "LazerPaths": {
-    "LazerCurrentDirectory": null,    // defaults to %LOCALAPPDATA%/osulazer/current
-    "DataDirectory": null,            // defaults to %APPDATA%/osu
-    "TempDirectory": null             // defaults to %TEMP%/lazer
-  }
-}
-```
+| 功能 | 路径 | 说明 |
+| ------ | ------ | ------ |
+| 状态 | `/api/status` | 各模块可用性 |
+| Stable 文件 | `/api/stable/files/{**relativePath}` | 从 osu!stable 目录读取文件，支持 `*` 通配符 |
+| Lazer 查询 | `/api/lazer/{scores,beatmaps,beatmapsets,collections}?rql=...&depth=N` | RQL 查询 Realm 数据库（Score / Beatmap / BeatmapSet / Collection），`depth` 控制嵌套展开 |
+| Lazer 文件 | `/api/lazer/files/{hash}` | 按哈希获取文件 |
+| osu! API v2 代理 | `/api/osuapi/v2/**` | 反向代理到 osu.ppy.sh |
+| 设置页 | `/settings` | 图形化配置管理 |

@@ -24,63 +24,42 @@ jobs:
           $targetDir = "$env:LOCALAPPDATA\osulazer\current"
           New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
 
-          # Fetch latest osu!lazer release
           $release = Invoke-RestMethod https://api.github.com/repos/ppy/osu/releases/latest
           $nupkg = $release.assets | Where-Object { $_.name -like '*full.nupkg' -and $_.name -notlike '*linux*' -and $_.name -notlike '*osx*' } | Select-Object -First 1
-          if (-not $nupkg) {
-            Write-Host "No full.nupkg found for Windows"
-            exit 1
-          }
+          if (-not $nupkg) { exit 1 }
 
-          Write-Host "Downloading $($nupkg.name)..."
           $zipPath = "$env:TEMP\osu-lazer.zip"
           Invoke-WebRequest -Uri $nupkg.browser_download_url -OutFile $zipPath
 
-          # Extract all DLLs to targetDir
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
           $dlls = $zip.Entries | Where-Object { $_.Name -like '*.dll' }
           foreach ($dll in $dlls) {
             $dest = Join-Path $targetDir $dll.Name
-            try {
-              [System.IO.Compression.ZipFileExtensions]::ExtractToFile($dll, $dest, $true)
-            } catch {
-              # Skip directory entries
-            }
+            try { [System.IO.Compression.ZipFileExtensions]::ExtractToFile($dll, $dest, $true) } catch { }
           }
           $zip.Dispose()
-          Write-Host "Extracted $($dlls.Count) DLLs to $targetDir"
 
-      - name: Publish Lazer
-        run: dotnet publish Lazer/OsuLocalServer.Lazer.csproj -c Release -o out/lazer
+      - name: Publish
+        run: dotnet publish OsuLocalServer/OsuLocalServer.csproj -c Release -o out
 
-      - name: Publish Stable
-        run: dotnet publish Stable/OsuLocalServer.Stable.csproj -c Release -o out/stable
-
-      - name: Read versions
-        id: versions
+      - name: Read version
+        id: version
         shell: pwsh
         run: |
-          $lazerVer = Select-String '<Version>([^<]+)</Version>' Lazer/OsuLocalServer.Lazer.csproj | %{ $_.Matches.Groups[1].Value }
-          $stableVer = Select-String '<Version>([^<]+)</Version>' Stable/OsuLocalServer.Stable.csproj | %{ $_.Matches.Groups[1].Value }
-          $tag = "stable-v${stableVer}_lazer-v${lazerVer}"
-          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "lazer_exe=out/lazer/OsuLocalServer.Lazer.exe#OsuLocalServer.Lazer-$lazerVer.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "stable_exe=out/stable/OsuLocalServer.Stable.exe#OsuLocalServer.Stable-$stableVer.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $ver = Select-String '<Version>([^<]+)</Version>' OsuLocalServer/OsuLocalServer.csproj | %{ $_.Matches.Groups[1].Value }
+          "tag=v$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "exe=out/OsuLocalServer.exe#OsuLocalServer-$ver.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $tag = "${{ steps.versions.outputs.tag }}"
+          $tag = "${{ steps.version.outputs.tag }}"
           git fetch --tags origin
           if (git tag | Select-String "^$tag$") {
             Write-Host "Release $tag already exists, skipping."
             return
           }
-          gh release create $tag `
-            "${{ steps.versions.outputs.lazer_exe }}" `
-            "${{ steps.versions.outputs.stable_exe }}" `
-            --title $tag `
-            --notes "Automated release."
+          gh release create $tag "${{ steps.version.outputs.exe }}" --title $tag --notes ""

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
-using Realms;
+
+namespace OsuLocalServer.Lazer;
 
 internal static class RealmConverter
 {

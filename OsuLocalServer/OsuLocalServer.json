@@ -6,8 +6,13 @@
     }
   },
   "AllowedHosts": "*",
-  "Urls": "http://localhost:5167",
-  "AppSettings": {
+  "Urls": "http://localhost:5048",
+  "Lazer": {
+    "LazerCurrentDirectory": null,
+    "DataDirectory": null,
+    "TempDirectory": null
+  },
+  "Stable": {
     "OsuRootPath": null
   }
 }

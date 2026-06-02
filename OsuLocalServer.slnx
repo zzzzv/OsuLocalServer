@@ -1,4 +1,3 @@
 <Solution>
-  <Project Path="Lazer/OsuLocalServer.Lazer.csproj" Id="d3c3cf8e-493b-4e96-9f1a-9e46ca7db16a" />
-  <Project Path="Stable/OsuLocalServer.Stable.csproj" />
+  <Project Path="OsuLocalServer/OsuLocalServer.csproj" />
 </Solution>

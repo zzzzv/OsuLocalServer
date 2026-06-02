@@ -5,31 +5,21 @@ using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Scoring;
 
-internal sealed class LazerScoreQueryService
+using OsuLocalServer.Settings;
+
+namespace OsuLocalServer.Lazer;
+
+internal sealed class LazerRealmQueryService
 {
     private static readonly Lazy<ulong> lazerSchemaVersion = new(ResolveLazerSchemaVersion);
 
-    private readonly ILogger<LazerScoreQueryService> logger;
-    private readonly string clientRealmPath;
-    private readonly string tempDirectory;
-    private readonly RealmConfiguration configuration;
+    private readonly ILogger<LazerRealmQueryService> logger;
+    private readonly SettingService _settings;
 
-    public LazerScoreQueryService(IConfiguration configuration, ILogger<LazerScoreQueryService> logger)
+    public LazerRealmQueryService(SettingService settings, ILogger<LazerRealmQueryService> logger)
     {
         this.logger = logger;
-
-        var dataDirectory = ServerConfig.GetDataDirectory(configuration);
-        clientRealmPath = Path.Combine(dataDirectory, "client.realm");
-        tempDirectory = ServerConfig.GetTempDirectory(configuration);
-
-        Directory.CreateDirectory(tempDirectory);
-
-        this.configuration = new RealmConfiguration(clientRealmPath)
-        {
-            IsReadOnly = true,
-            SchemaVersion = lazerSchemaVersion.Value,
-            FallbackPipePath = tempDirectory
-        };
+        _settings = settings;
     }
 
     public List<object> QueryScores(string rql, int depth = 0) =>
@@ -51,7 +41,18 @@ internal sealed class LazerScoreQueryService
         if (string.IsNullOrWhiteSpace(rql))
             throw new ArgumentException("RQL query string must not be empty.", nameof(rql));
 
-        using var realm = Realm.GetInstance(configuration);
+        var path = _settings.Settings.Lazer.ClientRealmPath;
+        var tempDir = LazerPaths.GetDefaultTempDirectory();
+        Directory.CreateDirectory(tempDir);
+
+        var config = new RealmConfiguration(path)
+        {
+            IsReadOnly = true,
+            SchemaVersion = lazerSchemaVersion.Value,
+            FallbackPipePath = tempDir,
+        };
+
+        using var realm = Realm.GetInstance(config);
 
         var items = queryFunc(realm).Cast<object>().ToList();
         var dictList = RealmConverter.ToList(items, depth);
@@ -65,19 +66,17 @@ internal sealed class LazerScoreQueryService
     private static ulong ResolveLazerSchemaVersion()
     {
         var realmAccessType = typeof(ScoreInfo).Assembly.GetType("osu.Game.Database.RealmAccess")
-            ?? throw new InvalidOperationException("未找到 osu.Game.Database.RealmAccess, 无法获取 lazer 数据库 schema version。");
+            ?? throw new InvalidOperationException("Could not find osu.Game.Database.RealmAccess type to resolve lazer schema version.");
 
         var schemaVersionField = realmAccessType.GetField("schema_version", BindingFlags.NonPublic | BindingFlags.Static)
-            ?? throw new InvalidOperationException("未找到 osu.Game.Database.RealmAccess.schema_version, 无法获取 lazer 数据库 schema version。");
+            ?? throw new InvalidOperationException("Could not find osu.Game.Database.RealmAccess.schema_version field to resolve lazer schema version.");
 
         var value = schemaVersionField.IsLiteral
             ? schemaVersionField.GetRawConstantValue()
             : schemaVersionField.GetValue(null);
 
         if (value is null)
-        {
-            throw new InvalidOperationException("osu.Game.Database.RealmAccess.schema_version 的值为空。");
-        }
+            throw new InvalidOperationException("osu.Game.Database.RealmAccess.schema_version value is null.");
 
         return Convert.ToUInt64(value);
     }
