@@ -22,6 +22,7 @@ public sealed class AppSettings
 
     public string Urls { get; set; } = "http://localhost:5048";
     public bool OpenSettingsOnStartup { get; set; } = true;
+    public bool BackupBeforeWrite { get; set; } = true;
     public LazerSettings Lazer { get; set; } = new();
     public StableSettings Stable { get; set; } = new();
     public ApiV2Credentials ApiV2 { get; set; } = new();
@@ -66,11 +67,13 @@ public sealed class AppSettings
 public sealed class LazerSettings
 {
     public string ClientRealmPath { get; set; } = Path.Combine(LazerPaths.GetDefaultDataDirectory(), "client.realm");
+    public bool IsAvailable => LazerPaths.IsAvailable();
 }
 
 public sealed class StableSettings
 {
     public string OsuRootPath { get; set; } = OsuPathResolver.TryFindOsuRootPath() ?? "";
+    public bool IsAvailable => OsuPathResolver.IsValidOsuRoot(OsuRootPath);
 }
 
 public sealed class ApiV2Credentials

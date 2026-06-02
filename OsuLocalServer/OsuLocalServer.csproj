@@ -9,7 +9,7 @@
     <PublishDir>..\publish\</PublishDir>
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
 
@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+    <PackageReference Include="zzzzv.OsuParsers" Version="1.7.2" />
   </ItemGroup>
 
 </Project>

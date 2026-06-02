@@ -112,6 +112,12 @@
             启动时打开设置页
           </label>
         </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" name="backupBeforeWrite" value="true" checked="@Model.BackupBeforeWrite">
+            写入数据库前备份
+          </label>
+        </div>
       </div>
 
       <div class="section">
@@ -144,9 +150,32 @@
         </div>
       </div>
 
-      <button type="submit">保存设置</button>
+      <button type="submit" id="saveBtn">保存设置</button>
     </form>
   </div>
 </div>
+<script>
+  (function() {
+    const form = document.querySelector('form');
+    const btn = document.getElementById('saveBtn');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    const initial = new FormData(form);
+
+    function checkChanged() {
+      const current = new FormData(form);
+      let changed = false;
+      for (let key of new Set([...initial.keys(), ...current.keys()])) {
+        if (initial.get(key) !== current.get(key)) { changed = true; break; }
+      }
+      btn.disabled = !changed;
+      btn.style.opacity = changed ? '1' : '.4';
+      btn.style.cursor = changed ? 'pointer' : 'default';
+    }
+
+    inputs.forEach(el => el.addEventListener('input', checkChanged));
+    inputs.forEach(el => el.addEventListener('change', checkChanged));
+    checkChanged();
+  })();
+</script>
 </body>
 </html>

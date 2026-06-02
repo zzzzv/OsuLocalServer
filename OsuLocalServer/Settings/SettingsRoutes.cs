@@ -1,6 +1,4 @@
 using OsuLocalServer.OsuApiV2;
-using OsuLocalServer.Lazer;
-using OsuLocalServer.Stable;
 
 namespace OsuLocalServer.Settings;
 
@@ -16,16 +14,8 @@ public static class SettingsRoutes
         var s = settings.Settings;
         return Results.Ok(new
         {
-            lazer = new
-            {
-                available = LazerPaths.IsAvailable(),
-                clientRealmPath = s.Lazer.ClientRealmPath,
-            },
-            stable = new
-            {
-                available = OsuPathResolver.IsValidOsuRoot(s.Stable.OsuRootPath),
-                osuRootPath = s.Stable.OsuRootPath,
-            },
+            lazer = s.Lazer,
+            stable = s.Stable,
             apiv2 = new
             {
                 configured = authService.IsConfigured,

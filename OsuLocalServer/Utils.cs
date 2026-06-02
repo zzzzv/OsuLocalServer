@@ -22,4 +22,17 @@ public static class Utils
         }
         catch { }
     }
+
+    public static void BackupFile(string path)
+    {
+        for (int i = 1; ; i++)
+        {
+            var backupPath = $"{path}.bak{i}";
+            if (!File.Exists(backupPath))
+            {
+                File.Copy(path, backupPath);
+                return;
+            }
+        }
+    }
 }

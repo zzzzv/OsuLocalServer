@@ -30,7 +30,7 @@ try
 
     builder.Services.AddRazorPages();
     builder.Services.AddSingleton<SettingService>();
-    builder.Services.AddSingleton<LazerRealmQueryService>();
+
     builder.Services.AddSingleton<OsuApiV2AuthService>();
 
     OsuApiV2Proxy.AddServices(builder.Services);

@@ -24,6 +24,7 @@ public class SettingsModel : PageModel
     public bool TokenValid => _authService.HasValidToken;
     public string Urls => _settings.Settings.Urls;
     public bool OpenSettingsOnStartup => _settings.Settings.OpenSettingsOnStartup;
+    public bool BackupBeforeWrite => _settings.Settings.BackupBeforeWrite;
     public string ClientRealmPath => _settings.Settings.Lazer.ClientRealmPath;
     public string OsuRootPath => _settings.Settings.Stable.OsuRootPath;
     public string? ClientId => _authService.GetClientId();
@@ -33,6 +34,7 @@ public class SettingsModel : PageModel
     public IActionResult OnPost(
         string urls,
         bool openSettingsOnStartup,
+        bool backupBeforeWrite,
         string clientRealmPath,
         string osuRootPath,
         string clientId,
@@ -44,6 +46,7 @@ public class SettingsModel : PageModel
             s.Urls = urls;
 
         s.OpenSettingsOnStartup = openSettingsOnStartup;
+        s.BackupBeforeWrite = backupBeforeWrite;
 
         if (!string.IsNullOrWhiteSpace(clientRealmPath))
             s.Lazer.ClientRealmPath = clientRealmPath;
@@ -51,11 +54,11 @@ public class SettingsModel : PageModel
         if (!string.IsNullOrWhiteSpace(osuRootPath))
             s.Stable.OsuRootPath = osuRootPath;
 
-        if (!string.IsNullOrWhiteSpace(clientId) || !string.IsNullOrWhiteSpace(clientSecret))
+        if (!string.IsNullOrWhiteSpace(clientSecret))
         {
             s.ApiV2 = new ApiV2Credentials
             {
-                ClientId = clientId,
+                ClientId = clientId ?? "",
                 ClientSecret = clientSecret,
             };
             _authService.ClearToken();
