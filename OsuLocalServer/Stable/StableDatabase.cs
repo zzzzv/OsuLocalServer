@@ -1,11 +1,20 @@
 using OsuParsers.Decoders;
+using OsuParsers.Database.Objects;
+using OsuParsers.Enums;
 
 namespace OsuLocalServer.Stable;
 
 internal static class StableDatabase
 {
-    public static CollectionOpResult AddToCollection(string dbPath, string name, string[] beatmapMd5Hashes)
+    public static string GetBeatmapPath(this DbBeatmap beatmap, string osuRoot) =>
+        Path.Combine(osuRoot, "Songs", beatmap.FolderName, beatmap.FileName);
+
+    public static CollectionOpResult AddToCollection(string osuRoot, string name, string[] beatmapMd5Hashes)
     {
+        if (Utils.IsOsuProcessRunning(osuRoot))
+            throw new InvalidOperationException("osu!stable 正在运行，无法写入 collection.db");
+
+        var dbPath = Path.Combine(osuRoot, "collection.db");
         var db = DatabaseDecoder.DecodeCollection(dbPath);
 
         var existing = db.Collections.FirstOrDefault(c => c.Name == name);
@@ -26,7 +35,7 @@ internal static class StableDatabase
         else
         {
             created = true;
-            var c = new OsuParsers.Database.Objects.Collection { Name = name };
+            var c = new Collection { Name = name };
             c.MD5Hashes.AddRange(beatmapMd5Hashes);
             c.Count = c.MD5Hashes.Count;
             db.Collections.Add(c);
@@ -37,5 +46,30 @@ internal static class StableDatabase
 
         var count = db.Collections.First(c => c.Name == name).MD5Hashes.Count;
         return new CollectionOpResult(name, count, created);
+    }
+
+    public static int WriteManiaStarRatings(string osuDbPath, Dictionary<string, StarRating> ratings)
+    {
+        var osuRoot = Path.GetDirectoryName(osuDbPath)!;
+        if (Utils.IsOsuProcessRunning(osuRoot))
+            throw new InvalidOperationException("osu!stable 正在运行，无法写入 osu!.db");
+
+        var db = DatabaseDecoder.DecodeOsu(osuDbPath);
+        int updated = 0;
+
+        foreach (var bm in db.Beatmaps)
+        {
+            if (bm.MD5Hash is null) continue;
+            if (ratings.TryGetValue(bm.MD5Hash, out var sr))
+            {
+                bm.ManiaStarRating[Mods.None] = sr.NM;
+                bm.ManiaStarRating[Mods.HalfTime] = sr.HT;
+                bm.ManiaStarRating[Mods.DoubleTime] = sr.DT;
+                updated++;
+            }
+        }
+
+        db.Save(osuDbPath);
+        return updated;
     }
 }

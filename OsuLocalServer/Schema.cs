@@ -6,3 +6,4 @@ public sealed record CreateCollectionRequest(
 );
 
 public sealed record CollectionOpResult(string Name, int BeatmapCount, bool Created);
+

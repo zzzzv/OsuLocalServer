@@ -9,13 +9,21 @@
     <PublishDir>..\publish\</PublishDir>
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
     <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="osu.Game">
       <HintPath>$(OsuLazerCurrentDir)\osu.Game.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="osu.Framework">
+      <HintPath>$(OsuLazerCurrentDir)\osu.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="osu.Game.Rulesets.Mania">
+      <HintPath>$(OsuLazerCurrentDir)\osu.Game.Rulesets.Mania.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Realm">
@@ -25,6 +33,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MessagePack" Version="3.1.6" />
+    <PackageReference Include="StarRatingRebirth" Version="0.1.1" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
     <PackageReference Include="zzzzv.OsuParsers" Version="1.7.2" />
   </ItemGroup>

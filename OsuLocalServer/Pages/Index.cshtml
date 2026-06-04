@@ -1,0 +1,21 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "状态";
+}
+<div style="padding:20px; max-width:600px; margin:0 auto; line-height:2">
+    <h1>OsuLocalServer</h1>
+    <p>版本: @Model.Version</p>
+
+    <h2>Stable</h2>
+    <p>路径: @Model.Settings.Stable.OsuRootPath<br>
+    可用: @(Model.Settings.Stable.IsAvailable ? "✅" : "❌")</p>
+
+    <h2>Lazer</h2>
+    <p>路径: @Model.Settings.Lazer.ClientRealmPath<br>
+    可用: @(Model.Settings.Lazer.IsAvailable ? "✅" : "❌")</p>
+
+    <h2>API v2</h2>
+    <p>已配置: @(Model.ApiV2Configured ? "✅" : "❌")<br>
+    令牌有效: @(Model.ApiV2TokenValid ? "✅" : "❌")</p>
+</div>

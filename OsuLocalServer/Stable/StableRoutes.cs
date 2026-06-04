@@ -17,14 +17,14 @@ public static class StableRoutes
     {
         var svc = ctx.HttpContext.RequestServices.GetRequiredService<SettingService>();
         if (!svc.Settings.Stable.IsAvailable)
-            return Results.Problem("osu!stable directory not available.", statusCode: 503);
+            return Results.Problem("osu!stable 目录不可用", statusCode: 503);
         return await next(ctx);
     }
 
     private static IResult HandleFile(string? relativePath, SettingService svc)
     {
         if (string.IsNullOrWhiteSpace(relativePath))
-            return Results.BadRequest("Relative file path is required.");
+            return Results.BadRequest("需要提供相对文件路径");
 
         var root = svc.Settings.Stable.OsuRootPath;
 
@@ -32,13 +32,13 @@ public static class StableRoutes
 
         if (relativePath.Contains('*'))
         {
-            filePath = OsuPathResolver.ResolveFilePathWithWildcard(root, relativePath);
+            filePath = StablePathResolver.ResolveFilePathWithWildcard(root, relativePath);
         }
         else
         {
-            filePath = OsuPathResolver.ResolveFilePath(root, relativePath);
+            filePath = StablePathResolver.ResolveFilePath(root, relativePath);
             if (filePath is null)
-                return Results.BadRequest("Invalid file path.");
+                return Results.BadRequest("无效的文件路径");
         }
 
         if (filePath is null || !File.Exists(filePath))
@@ -50,16 +50,14 @@ public static class StableRoutes
     private static IResult HandleCreateCollection(CreateCollectionRequest request, SettingService svc)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
-            return Results.BadRequest(new { error = "Collection name is required." });
+            return Results.BadRequest(new { error = "需要提供收藏夹名称" });
 
         var dbPath = Path.Combine(svc.Settings.Stable.OsuRootPath, "collection.db");
-        if (!File.Exists(dbPath))
-            return Results.Problem("collection.db not found.", statusCode: 404);
 
         if (svc.Settings.BackupBeforeWrite)
             Utils.BackupFile(dbPath);
 
-        var result = StableDatabase.AddToCollection(dbPath, request.Name, request.BeatmapMd5Hashes);
+        var result = StableDatabase.AddToCollection(svc.Settings.Stable.OsuRootPath, request.Name, request.BeatmapMd5Hashes);
         return Results.Ok(result);
     }
 }

@@ -2,6 +2,7 @@ using OsuLocalServer;
 using OsuLocalServer.Settings;
 using OsuLocalServer.OsuApiV2;
 using OsuLocalServer.Lazer;
+using OsuLocalServer.Management;
 using OsuLocalServer.Stable;
 
 try
@@ -29,9 +30,11 @@ try
     });
 
     builder.Services.AddRazorPages();
+    builder.Services.AddSignalR();
     builder.Services.AddSingleton<SettingService>();
 
     builder.Services.AddSingleton<OsuApiV2AuthService>();
+    builder.Services.AddSingleton<TaskManager>();
 
     OsuApiV2Proxy.AddServices(builder.Services);
 
@@ -42,6 +45,7 @@ try
     settingService.Settings = appSettings;
 
     app.MapRazorPages();
+    app.MapHub<ManagementHub>("/ws/management");
 
     app.MapLazerRoutes();
     app.MapStableRoutes();
@@ -50,16 +54,15 @@ try
     app.MapSettingsRoutes(settingService, apiV2Auth);
 
     app.MapReverseProxy();
+    app.MapManagementRoutes();
 
     var appVersion = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
     var startupLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     startupLogger.LogInformation("OsuLocalServer v{Version}", appVersion);
 
-    app.MapGet("/", () => "OsuLocalServer");
-
-    if (appSettings.OpenSettingsOnStartup)
+    if (appSettings.OpenBrowserOnStartup)
     {
-        var settingsUrl = $"{appSettings.Urls.TrimEnd('/')}/settings";
+        var settingsUrl = appSettings.Urls.TrimEnd('/');
         Utils.OpenBrowser(settingsUrl);
     }
 

@@ -19,7 +19,7 @@ internal static class LazerPaths
             "current");
 
     /// <summary>
-    /// Resolves the lazer current directory (always via default), validates DLLs exist.
+    /// 解析 lazer current 目录（始终使用默认路径），并验证 DLL 是否存在。
     /// </summary>
     public static string ResolveLazerCurrentDirectory()
     {

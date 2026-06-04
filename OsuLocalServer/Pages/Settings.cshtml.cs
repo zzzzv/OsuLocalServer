@@ -23,7 +23,7 @@ public class SettingsModel : PageModel
     public bool IsConfigured => _authService.IsConfigured;
     public bool TokenValid => _authService.HasValidToken;
     public string Urls => _settings.Settings.Urls;
-    public bool OpenSettingsOnStartup => _settings.Settings.OpenSettingsOnStartup;
+    public bool OpenBrowserOnStartup => _settings.Settings.OpenBrowserOnStartup;
     public bool BackupBeforeWrite => _settings.Settings.BackupBeforeWrite;
     public string ClientRealmPath => _settings.Settings.Lazer.ClientRealmPath;
     public string OsuRootPath => _settings.Settings.Stable.OsuRootPath;
@@ -33,7 +33,7 @@ public class SettingsModel : PageModel
 
     public IActionResult OnPost(
         string urls,
-        bool openSettingsOnStartup,
+        bool openBrowserOnStartup,
         bool backupBeforeWrite,
         string clientRealmPath,
         string osuRootPath,
@@ -45,7 +45,7 @@ public class SettingsModel : PageModel
         if (!string.IsNullOrWhiteSpace(urls))
             s.Urls = urls;
 
-        s.OpenSettingsOnStartup = openSettingsOnStartup;
+        s.OpenBrowserOnStartup = openBrowserOnStartup;
         s.BackupBeforeWrite = backupBeforeWrite;
 
         if (!string.IsNullOrWhiteSpace(clientRealmPath))
@@ -68,5 +68,11 @@ public class SettingsModel : PageModel
         Message = "Settings saved";
         MessageType = "success";
         return Page();
+    }
+
+    public IActionResult OnPostOpenFolder()
+    {
+        Utils.OpenFolder(AppSettings.StorageDir);
+        return RedirectToPage();
     }
 }

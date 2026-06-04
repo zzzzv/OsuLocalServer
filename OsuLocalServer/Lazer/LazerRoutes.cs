@@ -18,7 +18,7 @@ public static class LazerRoutes
         catch
         {
             var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Lazer");
-            logger.LogInformation("Lazer not detected — /api/lazer endpoints are unavailable");
+            logger.LogInformation("未检测到 Lazer — /api/lazer 端点不可用");
         }
 
         var group = app.MapGroup("/api/lazer");
@@ -36,7 +36,7 @@ public static class LazerRoutes
     {
         var svc = ctx.HttpContext.RequestServices.GetRequiredService<SettingService>();
         if (!svc.Settings.Lazer.IsAvailable)
-            return Results.Problem("Lazer not available.", statusCode: 503);
+            return Results.Problem("Lazer 不可用。", statusCode: 503);
         return await next(ctx);
     }
 
@@ -57,12 +57,12 @@ public static class LazerRoutes
         hash = hash.Trim('\"');
 
         if (string.IsNullOrWhiteSpace(hash) || hash.Length < 3)
-            return Results.BadRequest("Invalid file hash.");
+            return Results.BadRequest("无效的文件哈希。");
 
         var dataDir = Path.GetDirectoryName(svc.Settings.Lazer.ClientRealmPath) ?? LazerPaths.GetDefaultDataDirectory();
         var filePath = Path.Combine(dataDir, "files", hash[..1], hash[..2], hash);
         if (!File.Exists(filePath))
-            return Results.NotFound($"File not found: {filePath}");
+            return Results.NotFound($"文件未找到: {filePath}");
 
         return Results.File(filePath, contentType: "application/octet-stream");
     }
@@ -70,11 +70,11 @@ public static class LazerRoutes
     private static IResult HandleCreateCollection(CreateCollectionRequest request, SettingService svc)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
-            return Results.BadRequest(new { error = "Collection name is required." });
+            return Results.BadRequest(new { error = "需要提供收藏夹名称。" });
 
         var path = svc.Settings.Lazer.ClientRealmPath;
         if (!File.Exists(path))
-            return Results.Problem("client.realm not found.", statusCode: 404);
+            return Results.Problem("未找到 client.realm。", statusCode: 404);
 
         var result = LazerRealm.AddToCollection(path, request.Name, request.BeatmapMd5Hashes);
         return Results.Ok(result);

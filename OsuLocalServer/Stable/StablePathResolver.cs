@@ -2,7 +2,7 @@ using Microsoft.Win32;
 
 namespace OsuLocalServer.Stable;
 
-public static class OsuPathResolver
+public static class StablePathResolver
 {
     private static readonly string[] RegistryPaths =
     [
@@ -79,9 +79,9 @@ public static class OsuPathResolver
     }
 
     /// <summary>
-    /// Walk the filesystem tree using <c>*</c> as a wildcard in path segments.
-    /// <c>*</c> matches any characters (except the path separator).
-    /// Returns the <b>first</b> match found, or null.
+    /// 使用 <c>*</c> 通配符遍历文件系统树。
+    /// <c>*</c> 匹配任意字符（路径分隔符除外）。
+    /// 返回第一个匹配项，或 null。
     /// </summary>
     public static string? ResolveFilePathWithWildcard(string osuRootPath, string relativePath)
     {

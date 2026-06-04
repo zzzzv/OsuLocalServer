@@ -1,0 +1,219 @@
+@page
+@model ManagementModel
+@{
+    ViewData["Title"] = "管理";
+}
+@section Head {
+<style>
+.page-wrap { padding: 20px; }
+.container { max-width: 1100px; width: 100%; margin: 0 auto; }
+  h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 2px; }
+  .subtitle { color: var(--muted); font-size: 0.82rem; margin-bottom: 20px; }
+
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .card-title {
+    font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--muted);
+    padding: 12px 14px 0; margin-bottom: 8px;
+  }
+  .card-body { padding: 8px 14px 14px; }
+
+  .task-card { margin-bottom: 12px; }
+  .task-card:last-child { margin-bottom: 0; }
+  .task-card .name {
+    font-size: 0.88rem; font-weight: 500; margin-bottom: 8px;
+  }
+  .param-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    font-size: 0.82rem;
+  }
+  .param-row label { color: var(--muted); min-width: 70px; flex-shrink: 0; }
+  .param-row input, .param-row select {
+    flex: 1; padding: 4px 7px; border: 1px solid var(--border); border-radius: 4px;
+    font-size: 0.82rem; outline: none;
+  }
+  .param-row input:focus { border-color: var(--accent); }
+  .param-row.checkbox-row label { min-width: auto; cursor: pointer; }
+  .param-row.checkbox-row input { flex: none; width: auto; }
+  .param-row.radio-row { gap: 2px; }
+  .param-row.radio-row label:first-child { min-width: 70px; }
+  .param-row.radio-row .radio-opt { min-width: auto; cursor: pointer; color: inherit; }
+  .param-row.radio-row input { flex: none; width: auto; }
+
+  .log-panel .card-body {
+    padding: 0; min-height: 400px; max-height: 70vh;
+    overflow-y: auto; overflow-x: auto;
+    font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5;
+  }
+  .log-line .msg { white-space: pre-wrap; word-break: break-all; }
+
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 5px;
+    font-size: 0.82rem; cursor: pointer; font-weight: 500;
+    transition: background .15s; width: 100%;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3a6ae8; }
+  .btn-primary:disabled { opacity: .4; cursor: default; }
+  .btn-danger { background: var(--error); color: #fff; }
+  .btn-danger:hover { background: #c0392b; }
+
+  .log-empty {
+    padding: 40px 20px; text-align: center; color: var(--muted);
+  }
+  .log-line {
+    padding: 0 16px;
+  }
+  .log-line:hover { background: #f8f9fa; }
+  .log-line .lvl { font-weight: 600; }
+  .log-line .lvl-INFO { color: var(--running); }
+  .log-line .lvl-WARN { color: var(--warn); }
+  .log-line .lvl-ERROR { color: var(--error); }
+  .log-line .time { color: var(--muted); }
+</style>
+}
+<div class="page-wrap"><div class="container">
+  <h1>⚙️ 管理</h1>
+  <p class="subtitle">后台任务</p>
+
+  <div class="layout">
+    <!-- Left: task list -->
+    <div class="card">
+      <div class="card-title">📋 任务列表</div>
+      <div class="card-body">
+        <div class="task-card">
+          <div class="name">生成 Mania SR</div>
+          <form method="post" asp-page-handler="generate">
+            <div class="param-row">
+              <label>并行数</label>
+              <input type="number" name="parallelism" value="@Model.GenerateManiaSR.Parallelism" min="1" max="32">
+            </div>
+            <div class="param-row checkbox-row">
+              <label>
+                <input type="checkbox" name="logXxyErrors" value="true" checked="@Model.GenerateManiaSR.LogXxyErrors">
+                记录 XXY 计算错误
+              </label>
+            </div>
+            <div class="param-row checkbox-row">
+              <label>
+                <input type="checkbox" name="saveCheckpoint" value="true" checked="@Model.GenerateManiaSR.SaveCheckpoint">
+                阶段写入
+              </label>
+            </div>
+            <div style="margin-top:10px">
+              @if (!Model.IsRunning)
+              {
+                <button type="submit" class="btn btn-primary">▶ 开始</button>
+              }
+              else
+              {
+                <button type="submit" class="btn btn-primary" disabled>运行中...</button>
+              }
+            </div>
+          </form>
+        </div>
+
+        <div class="task-card">
+          <div class="name">写入 Mania SR</div>
+          <form method="post" asp-page-handler="writeManiaSR">
+            <div class="param-row radio-row">
+              <label>目标</label>
+              <label class="radio-opt"><input type="radio" name="target" value="Stable" checked="@(Model.WriteManiaSR.Target == ManiaSRTarget.Stable)"> Stable</label>
+              <label class="radio-opt"><input type="radio" name="target" value="Lazer" checked="@(Model.WriteManiaSR.Target == ManiaSRTarget.Lazer)"> Lazer</label>
+            </div>
+            <div class="param-row radio-row">
+              <label>算法</label>
+              <label class="radio-opt"><input type="radio" name="algorithm" value="PPY" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.PPY)"> PPY</label>
+              <label class="radio-opt"><input type="radio" name="algorithm" value="XXY" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.XXY)"> XXY</label>
+            </div>
+            <div style="margin-top:10px">
+              @if (!Model.IsRunning)
+              {
+                <button type="submit" class="btn btn-primary">▶ 开始</button>
+              }
+              else
+              {
+                <button type="submit" class="btn btn-primary" disabled>运行中...</button>
+              }
+            </div>
+          </form>
+        </div>
+
+        @if (Model.IsRunning)
+        {
+          <form method="post" asp-page-handler="cancel">
+            <button type="submit" class="btn btn-danger" style="margin-top:4px">■ 取消当前任务</button>
+          </form>
+        }
+      </div>
+    </div>
+
+    <!-- Right: log viewer -->
+    <div class="card log-panel">
+      <div class="card-title">📄 日志</div>
+      <div class="card-body" id="logBody">
+        @if (Model.LogCount == 0)
+        {
+          <div class="log-empty">配置参数后点击「开始」运行</div>
+        }
+        else
+        {
+          foreach (var entry in Model.GetLogEntries())
+          {
+            <div class="log-line">
+              <span class="time">[@entry.Time]</span>
+              <span class="lvl lvl-@entry.Level">[@entry.Level]</span>
+              <span class="msg">@entry.Message</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+(function() {
+  var logBody = document.getElementById('logBody');
+  if (!logBody) return;
+
+  var connection = new signalR.HubConnectionBuilder()
+    .withUrl('/ws/management')
+    .withAutomaticReconnect()
+    .build();
+
+  connection.on('Log', function (time, level, message) {
+    var empty = logBody.querySelector('.log-empty');
+    if (empty) empty.remove();
+    var div = document.createElement('div');
+    div.className = 'log-line';
+    div.innerHTML = '<span class="time">[' + esc(time) + ']</span> ' +
+      '<span class="lvl lvl-' + esc(level) + '">[' + esc(level) + ']</span> ' +
+      '<span class="msg">' + esc(message) + '</span>';
+    logBody.appendChild(div);
+    logBody.scrollTop = logBody.scrollHeight;
+  });
+
+  connection.on('TaskDone', function (state) {
+    location.reload();
+  });
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  connection.start().catch(function (err) {
+    console.error('SignalR connection failed: ' + err);
+  });
+
+  // 页面加载后日志滚到底部
+  if (logBody.children.length > 0) logBody.scrollTop = logBody.scrollHeight;
+})();
+</script>
+}
