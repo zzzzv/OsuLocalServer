@@ -48,7 +48,7 @@ internal static class StableDatabase
         return new CollectionOpResult(name, count, created);
     }
 
-    public static int WriteManiaStarRatings(string osuDbPath, Dictionary<string, StarRating> ratings)
+    public static int WriteManiaStarRatings(string osuDbPath, Dictionary<string, StarRating> starRatings)
     {
         var osuRoot = Path.GetDirectoryName(osuDbPath)!;
         if (Utils.IsOsuProcessRunning(osuRoot))
@@ -60,7 +60,7 @@ internal static class StableDatabase
         foreach (var bm in db.Beatmaps)
         {
             if (bm.MD5Hash is null) continue;
-            if (ratings.TryGetValue(bm.MD5Hash, out var sr))
+            if (starRatings.TryGetValue(bm.MD5Hash, out var sr))
             {
                 bm.ManiaStarRating[Mods.None] = sr.NM;
                 bm.ManiaStarRating[Mods.HalfTime] = sr.HT;

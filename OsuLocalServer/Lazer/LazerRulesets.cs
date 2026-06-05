@@ -1,6 +1,8 @@
+using System.Text;
 using osu.Game.Beatmaps;
+using osu.Game.IO;
+using osu.Game.Online.API;
 using osu.Game.Rulesets;
-using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Mania.Mods;
 using osu.Game.Rulesets.Mods;
 
@@ -16,6 +18,20 @@ public static class LazerRulesets
         var working = new FlatWorkingBeatmap(beatmapPath);
         var rulesetInfo = working.BeatmapInfo.Ruleset ?? throw new InvalidOperationException("谱面无 ruleset 信息");
         var ruleset = rulesetInfo.CreateInstance() ?? throw new InvalidOperationException($"无法创建 ruleset 实例: {rulesetInfo.Name}");
+        var calculator = ruleset.CreateDifficultyCalculator(working);
+        return calculator.Calculate(mods).StarRating;
+    }
+
+    public static double CalcSRFromContent(string beatmapContent, APIMod[] apiMods)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(beatmapContent));
+        using var reader = new LineBufferedReader(stream);
+        var beatmap = osu.Game.Beatmaps.Formats.Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
+
+        var working = new FlatWorkingBeatmap(beatmap);
+        var rulesetInfo = working.BeatmapInfo.Ruleset ?? throw new InvalidOperationException("谱面无 ruleset 信息");
+        var ruleset = rulesetInfo.CreateInstance() ?? throw new InvalidOperationException($"无法创建 ruleset 实例: {rulesetInfo.Name}");
+        var mods = apiMods.Select(m => m.ToMod(ruleset)).ToArray();
         var calculator = ruleset.CreateDifficultyCalculator(working);
         return calculator.Calculate(mods).StarRating;
     }

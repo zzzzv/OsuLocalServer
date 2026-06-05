@@ -4,16 +4,75 @@ osu本地数据服务
 
 ## API
 
-| 功能 | 路径 | 说明 |
-| ------ | ------ | ------ |
-| 状态 | `/api/status` | 各模块可用性 |
-| Stable 文件 | `/api/stable/files/{**relativePath}` | 从 osu!stable 目录读取文件，支持 `*` 通配符 |
-| Stable 收藏夹 | `POST /api/stable/collections` | 追加 beatmap md5hash 到 stable 收藏夹 |
-| Lazer 查询 | `/api/lazer/{scores,beatmaps,beatmapsets,collections}?rql=...&depth=N` | RQL 查询 Realm 数据库（Score / Beatmap / BeatmapSet / Collection），`depth` 控制嵌套展开 |
-| Lazer 文件 | `/api/lazer/files/{hash}` | 按 hash 获取文件 |
-| Lazer 收藏夹 | `POST /api/lazer/collections` | 追加 beatmap md5hash 到 lazer 收藏夹 |
-| osu! API v2 代理 | `/api/osuapi/v2/**` | 反向代理到 osu.ppy.sh |
-| Mania SR 数据 | `/api/management/mania-sr/msgpack` | 已提取的谱面 SR 信息 |
+### GET
+
+| 路径 | 说明 |
+| ------ | ------ |
+| `/api/status` | 各模块可用性 |
+| `/api/stable/files/{**relativePath}` | 从 osu!stable 目录读取文件，支持 `*` 通配符 |
+| `/api/lazer/scores?rql=...&depth=N` | RQL 查询 Score |
+| `/api/lazer/beatmaps?rql=...&depth=N` | RQL 查询 Beatmap |
+| `/api/lazer/beatmapsets?rql=...&depth=N` | RQL 查询 BeatmapSet |
+| `/api/lazer/collections?rql=...&depth=N` | RQL 查询 Collection |
+| `/api/lazer/files/{hash}` | 按 hash 获取文件 |
+| `/api/osuapi/v2/**` | 反向代理到 osu.ppy.sh |
+| `/api/management/mania-sr/msgpack` | 已提取的谱面 SR 信息 |
+
+### POST
+
+#### `/api/stable/collection/update`
+
+更新 stable 收藏夹，追加 beatmap md5hash。
+
+```json
+{ "name": "...", "beatmapMd5Hashes": ["...", "..."] }
+```
+
+#### `/api/stable/star-rating/update`
+
+批量写入 Mania Star Rating（NM/HT/DT）到 stable 的 `osu!.db`。
+
+```json
+{ "starRatings": { "<md5>": { "nm": 6.53, "ht": 5.21, "dt": 7.82 } } }
+```
+
+#### `/api/lazer/collection/update`
+
+更新 lazer 收藏夹，追加 beatmap md5hash。
+
+```json
+{ "name": "...", "beatmapMd5Hashes": ["...", "..."] }
+```
+
+#### `/api/lazer/star-rating/calculate`
+
+计算谱面 Star Rating，接受 .osu 文件内容和 mod 列表。
+
+```json
+{
+  "beatmapContent": "osu file format v14...",
+  "mods": [
+    { "acronym": "DT", "settings": { "speed_change": 1.5 } },
+    { "acronym": "HR" }
+  ]
+}
+```
+
+#### `/api/lazer/star-rating/update`
+
+批量写入 Star Rating 到 lazer 的 `client.realm`。
+
+```json
+{ "starRatings": { "<md5>": 6.53, "<md5>": 4.21 } }
+```
+
+#### `/api/tools/xxy-calculate`
+
+使用 StarRatingRebirth 计算 XXY SR。
+
+```json
+{ "beatmapContent": "osu file format v14...", "speedRate": 1.5 }
+```
 
 ## 页面
 

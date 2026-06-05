@@ -1,0 +1,36 @@
+@HostAddress = http://localhost:5048
+@BeatmapHash = 473eae3bc04005fc728876b096c29fb1f5f74087046ebb2945e08612ec7c798b
+@BeatmapMd5Hash = 7b143bd479e4284d1b219afd6e69615d
+
+### Lazer: query scores
+GET {{HostAddress}}/api/lazer/scores?rql=BeatmapHash=="{{BeatmapHash}}"&depth=1
+Accept: application/json
+
+### Lazer: query beatmaps
+GET {{HostAddress}}/api/lazer/beatmaps?rql=Hash=="{{BeatmapHash}}"&depth=1
+Accept: application/json
+
+### Lazer: query beatmaps by BeatmapSet OnlineID
+GET {{HostAddress}}/api/lazer/beatmaps?rql=BeatmapSet.OnlineID==2280130
+Accept: application/json
+
+### Lazer: query beatmap sets
+GET {{HostAddress}}/api/lazer/beatmapsets?rql=OnlineID==2280130&depth=1
+Accept: application/json
+
+### Lazer: query collections
+GET {{HostAddress}}/api/lazer/collections?rql=Name=="love"&depth=1
+Accept: application/json
+
+### Lazer: get file by hash
+GET {{HostAddress}}/api/lazer/files/{{BeatmapHash}}
+Accept: application/octet-stream
+
+### Lazer: update collection
+POST {{HostAddress}}/api/lazer/collection/update
+Content-Type: application/json
+
+{
+  "name": "Test",
+  "beatmapMd5Hashes": ["{{BeatmapMd5Hash}}"]
+}

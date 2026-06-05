@@ -84,7 +84,7 @@ internal static class LazerRealm
         return Convert.ToUInt64(value);
     }
 
-    public static int WriteStarRatings(string clientRealmPath, Dictionary<string, double> ratings)
+    public static int WriteStarRatings(string clientRealmPath, Dictionary<string, double> starRatings)
     {
         using var realm = OpenRealm(clientRealmPath, false);
 
@@ -93,7 +93,7 @@ internal static class LazerRealm
         {
             foreach (var bm in realm.All<BeatmapInfo>())
             {
-                if (ratings.TryGetValue(bm.MD5Hash, out var sr))
+                if (starRatings.TryGetValue(bm.MD5Hash, out var sr))
                 {
                     bm.StarRating = sr;
                     updated++;

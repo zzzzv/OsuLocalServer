@@ -6,7 +6,13 @@ namespace OsuLocalServer;
 
 public static class Utils
 {
-    private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+    private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new()
+    {
+        Mappings =
+        {
+            [".osu"] = "text/plain",
+        },
+    };
 
     public static string GetContentType(string filePath)
     {

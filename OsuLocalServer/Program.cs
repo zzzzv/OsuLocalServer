@@ -4,6 +4,7 @@ using OsuLocalServer.OsuApiV2;
 using OsuLocalServer.Lazer;
 using OsuLocalServer.Management;
 using OsuLocalServer.Stable;
+using OsuLocalServer.Tools;
 
 try
 {
@@ -49,6 +50,7 @@ try
 
     app.MapLazerRoutes();
     app.MapStableRoutes();
+    app.MapToolsRoutes();
 
     var apiV2Auth = app.Services.GetRequiredService<OsuApiV2AuthService>();
     app.MapSettingsRoutes(settingService, apiV2Auth);

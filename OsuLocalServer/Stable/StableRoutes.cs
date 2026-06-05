@@ -2,6 +2,10 @@ using OsuLocalServer.Settings;
 
 namespace OsuLocalServer.Stable;
 
+public sealed record WriteStableStarRatingsRequest(
+    Dictionary<string, StarRating> StarRatings
+);
+
 public static class StableRoutes
 {
     public static void MapStableRoutes(this WebApplication app)
@@ -10,7 +14,8 @@ public static class StableRoutes
         group.AddEndpointFilter(StableAvailabilityFilter);
 
         group.MapGet("/files/{**relativePath}", HandleFile);
-        group.MapPost("/collections", HandleCreateCollection);
+        group.MapPost("/collection/update", HandleCreateCollection);
+        group.MapPost("/star-rating/update", HandleWriteManiaStarRatings);
     }
 
     private static async ValueTask<object?> StableAvailabilityFilter(EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
@@ -59,5 +64,25 @@ public static class StableRoutes
 
         var result = StableDatabase.AddToCollection(svc.Settings.Stable.OsuRootPath, request.Name, request.BeatmapMd5Hashes);
         return Results.Ok(result);
+    }
+
+    private static IResult HandleWriteManiaStarRatings(WriteStableStarRatingsRequest request, SettingService svc)
+    {
+        if (request.StarRatings.Count == 0)
+            return Results.BadRequest(new { error = "需要提供至少一个 StarRating。" });
+
+        var osuDbPath = Path.Combine(svc.Settings.Stable.OsuRootPath, "osu!.db");
+        if (!File.Exists(osuDbPath))
+            return Results.Problem("未找到 osu!.db。", statusCode: 404);
+
+        try
+        {
+            var updated = StableDatabase.WriteManiaStarRatings(osuDbPath, request.StarRatings);
+            return Results.Ok(new { updated });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.Problem(ex.Message, statusCode: 409);
+        }
     }
 }
