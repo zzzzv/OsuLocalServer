@@ -9,9 +9,19 @@
     <PublishDir>..\publish\</PublishDir>
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
-    <Version>0.3.1</Version>
+    <Version>0.3.2</Version>
     <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
+
+  <!-- publish 后在输出文件名中追加版本号 -->
+  <Target Name="AddVersionToPublishOutput" AfterTargets="Publish" Condition="'$(Version)' != ''">
+    <Move SourceFiles="$(PublishDir)$(AssemblyName).exe"
+          DestinationFiles="$(PublishDir)$(AssemblyName)-$(Version).exe"
+          Condition="Exists('$(PublishDir)$(AssemblyName).exe')" />
+    <Move SourceFiles="$(PublishDir)$(AssemblyName).pdb"
+          DestinationFiles="$(PublishDir)$(AssemblyName)-$(Version).pdb"
+          Condition="Exists('$(PublishDir)$(AssemblyName).pdb')" />
+  </Target>
 
   <ItemGroup>
     <Reference Include="osu.Game">

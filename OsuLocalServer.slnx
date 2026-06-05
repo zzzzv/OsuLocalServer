@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="OsuLocalServer/OsuLocalServer.csproj" />
+  <Project Path="OsuLocalServer.Tests/OsuLocalServer.Tests.csproj" />
 </Solution>

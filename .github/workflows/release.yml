@@ -49,7 +49,7 @@ jobs:
         run: |
           $ver = Select-String '<Version>([^<]+)</Version>' OsuLocalServer/OsuLocalServer.csproj | %{ $_.Matches.Groups[1].Value }
           "tag=v$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "exe=out/OsuLocalServer.exe#OsuLocalServer-$ver.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "exe=out/OsuLocalServer-$ver.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Create release
         env:

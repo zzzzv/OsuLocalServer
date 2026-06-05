@@ -1,0 +1,29 @@
+@baseUrl = http://localhost:5048
+@beatmapMd5Hash = 3f3d8bd7f74dc3ffd9ea2ddb33ef1fbd
+
+### 获取文件（精确路径）
+GET {{baseUrl}}/api/stable/files/Songs/2034520 Ibuki Kido & Erii Yamazaki - pupa (TV Size)/Ibuki Kido & Erii Yamazaki - pupa (TV Size) (MapleSyrup-) [Another].osu
+Accept: application/octet-stream
+
+### 获取 replay（通配符）
+GET {{baseUrl}}/api/stable/files/Data/r/{{beatmapMd5Hash}}-*.osr
+Accept: application/octet-stream
+
+### 更新收藏夹
+POST {{baseUrl}}/api/stable/collection/update
+Content-Type: application/json
+
+{
+    "name": "Test",
+    "beatmapMd5Hashes": ["{{beatmapMd5Hash}}"]
+}
+
+### 批量写入 Mania Star Rating
+POST {{baseUrl}}/api/stable/star-rating/update
+Content-Type: application/json
+
+{
+    "starRatings": {
+        "{{beatmapMd5Hash}}": { "nm": 5, "ht": 4, "dt": 6 }
+    }
+}

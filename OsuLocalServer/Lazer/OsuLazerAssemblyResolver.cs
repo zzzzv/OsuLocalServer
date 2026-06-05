@@ -15,6 +15,25 @@ internal static class OsuLazerAssemblyResolver
 
         lazerDirectory = lazerCurrentDirectory;
         AssemblyLoadContext.Default.Resolving += ResolveFromLazerCurrentDirectory;
+
+        PreloadRulesetAssemblies(lazerCurrentDirectory);
+    }
+
+    private static void PreloadRulesetAssemblies(string lazerCurrentDirectory)
+    {
+        if (!Directory.Exists(lazerCurrentDirectory))
+            return;
+
+        foreach (var path in Directory.EnumerateFiles(lazerCurrentDirectory, "osu.Game.Rulesets*.dll", SearchOption.TopDirectoryOnly))
+        {
+            if (AppDomain.CurrentDomain.GetAssemblies().Any(a =>
+                    string.Equals(a.GetName().Name, Path.GetFileNameWithoutExtension(path), StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
+        }
     }
 
     private static Assembly? ResolveFromLazerCurrentDirectory(AssemblyLoadContext context, AssemblyName assemblyName)

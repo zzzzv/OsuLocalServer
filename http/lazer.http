@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:5048
+@beatmapHash = a4f58b4494a4ff0dc55c507495703b4f5be636fe0290ab046715f24671fdc7f7
+@beatmapMd5Hash = 3f3d8bd7f74dc3ffd9ea2ddb33ef1fbd
+@onlineId = 4249325
+
+### 查询 Score
+GET {{baseUrl}}/api/lazer/scores?rql=BeatmapHash==%22{{beatmapHash}}%22&depth=1
+Accept: application/json
+
+### 查询 Beatmap
+GET {{baseUrl}}/api/lazer/beatmaps?rql=Hash==%22{{beatmapHash}}%22&depth=1
+Accept: application/json
+
+### 查询 BeatmapSet
+GET {{baseUrl}}/api/lazer/beatmapsets?rql=OnlineID=={{onlineId}}&depth=1
+Accept: application/json
+
+### 查询 Collection
+GET {{baseUrl}}/api/lazer/collections?rql=Name==%22Test%22&depth=1
+Accept: application/json
+
+### 按 hash 获取文件
+GET {{baseUrl}}/api/lazer/files/{{beatmapHash}}
+Accept: application/octet-stream
+
+### 更新收藏夹
+POST {{baseUrl}}/api/lazer/collection/update
+Content-Type: application/json
+
+{
+    "name": "Test",
+    "beatmapMd5Hashes": ["{{beatmapMd5Hash}}"]
+}
+
+### 计算 Star Rating (DT)
+POST {{baseUrl}}/api/lazer/star-rating/calculate?mods=[{%22acronym%22:%22DT%22,%22settings%22:{%22speed_change%22:1.5}}]
+Content-Type: text/plain
+
+< ../fixtures/pupa.osu
+
+### 批量写入 Star Rating
+POST {{baseUrl}}/api/lazer/star-rating/update
+Content-Type: application/json
+
+{
+    "starRatings": {
+        "{{beatmapMd5Hash}}": 5.0
+    }
+}

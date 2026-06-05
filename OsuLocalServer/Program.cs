@@ -42,6 +42,10 @@ try
     var app = builder.Build();
     app.UseCors();
 
+    // CLI 参数：强制禁用模块，用于模拟无 stable/lazer 的环境
+    if (args.Contains("--no-lazer")) appSettings.Lazer.Disable = true;
+    if (args.Contains("--no-stable")) appSettings.Stable.Disable = true;
+
     var settingService = app.Services.GetRequiredService<SettingService>();
     settingService.Settings = appSettings;
 

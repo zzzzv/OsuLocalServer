@@ -44,18 +44,15 @@ osu本地数据服务
 { "name": "...", "beatmapMd5Hashes": ["...", "..."] }
 ```
 
-#### `/api/lazer/star-rating/calculate`
+#### `/api/lazer/star-rating/calculate?mods=...`
 
-计算谱面 Star Rating，接受 .osu 文件内容和 mod 列表。
+计算谱面 Star Rating，body 为原始 .osu 文件内容，mods 通过查询参数传递（JSON 数组，需 URL 编码）。
 
-```json
-{
-  "beatmapContent": "osu file format v14...",
-  "mods": [
-    { "acronym": "DT", "settings": { "speed_change": 1.5 } },
-    { "acronym": "HR" }
-  ]
-}
+```http
+POST /api/lazer/star-rating/calculate?mods=[{"acronym":"DT","settings":{"speed_change":1.5}},{"acronym":"HR"}]
+Content-Type: text/plain
+
+osu file format v14...
 ```
 
 #### `/api/lazer/star-rating/update`
@@ -66,12 +63,15 @@ osu本地数据服务
 { "starRatings": { "<md5>": 6.53, "<md5>": 4.21 } }
 ```
 
-#### `/api/tools/xxy-calculate`
+#### `/api/tools/xxy-calculate?speedRate=...`
 
-使用 StarRatingRebirth 计算 XXY SR。
+使用 StarRatingRebirth 计算 XXY SR。body 为原始 .osu 文件内容，`speedRate` 通过查询参数传递。
 
-```json
-{ "beatmapContent": "osu file format v14...", "speedRate": 1.5 }
+```http
+POST /api/tools/xxy-calculate?speedRate=1.5
+Content-Type: text/plain
+
+osu file format v14...
 ```
 
 ## 页面

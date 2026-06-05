@@ -69,13 +69,21 @@ public sealed class AppSettings
 public sealed class LazerSettings
 {
     public string ClientRealmPath { get; set; } = Path.Combine(LazerPaths.GetDefaultDataDirectory(), "client.realm");
-    public bool IsAvailable => LazerPaths.IsAvailable();
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool Disable { get; set; }
+
+    public bool IsAvailable => !Disable && LazerPaths.IsAvailable();
 }
 
 public sealed class StableSettings
 {
     public string OsuRootPath { get; set; } = StablePathResolver.TryFindOsuRootPath() ?? "";
-    public bool IsAvailable => StablePathResolver.IsValidOsuRoot(OsuRootPath);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool Disable { get; set; }
+
+    public bool IsAvailable => !Disable && StablePathResolver.IsValidOsuRoot(OsuRootPath);
 }
 
 public sealed class ApiV2Credentials

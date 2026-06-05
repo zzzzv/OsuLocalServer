@@ -14,6 +14,11 @@ public sealed record WriteStarRatingsRequest(
 
 public static class LazerRoutes
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+    
     public static void MapLazerRoutes(this WebApplication app)
     {
         try
@@ -90,24 +95,15 @@ public static class LazerRoutes
 
     private static async Task<IResult> HandleCalcSR(HttpContext context)
     {
-        // 手动解析 JSON 而非依赖 ASP.NET 模型绑定，推测是因为：
-        // APIMod 来自 osu.Game.dll（启动后由 OsuLazerAssemblyResolver 动态加载），
-        // 若框架在启动时反射 handler 的参数类型（含 APIMod）来确定绑定方式，
-        // 会因程序集尚未加载而引发错误。
-        // 改用 HttpContext + 手动解析后，类型解析延迟到首次请求的 JIT 阶段，
-        // 此时 osu.Game.dll 已加载完毕。
         using var reader = new StreamReader(context.Request.Body);
-        var body = await reader.ReadToEndAsync();
+        var beatmapContent = await reader.ReadToEndAsync();
 
-        using var doc = JsonDocument.Parse(body);
-        var root = doc.RootElement;
-
-        var beatmapContent = root.GetProperty("beatmapContent").GetString();
         if (string.IsNullOrWhiteSpace(beatmapContent))
-            return Results.BadRequest(new { error = "需要提供 beatmapContent(.osu 文件内容)。" });
+            return Results.BadRequest(new { error = "body 需要提供 .osu 文件内容。" });
 
-        var mods = root.TryGetProperty("mods", out var modsEl)
-            ? modsEl.EnumerateArray().Select(ReadApiMod).ToArray()
+        var modsQuery = context.Request.Query["mods"].FirstOrDefault();
+        var mods = !string.IsNullOrWhiteSpace(modsQuery)
+            ? JsonSerializer.Deserialize<APIMod[]>(modsQuery, JsonOptions) ?? []
             : [];
 
         try
@@ -120,26 +116,6 @@ public static class LazerRoutes
             return Results.Problem(ex.Message, statusCode: 400);
         }
     }
-
-    private static APIMod ReadApiMod(JsonElement el)
-    {
-        var mod = new APIMod { Acronym = el.GetProperty("acronym").GetString() ?? "" };
-        if (el.TryGetProperty("settings", out var settings))
-        {
-            foreach (var prop in settings.EnumerateObject())
-                mod.Settings[prop.Name] = JsonValueToObject(prop.Value);
-        }
-        return mod;
-    }
-
-    private static object JsonValueToObject(JsonElement el) => el.ValueKind switch
-    {
-        JsonValueKind.String => el.GetString()!,
-        JsonValueKind.Number => el.TryGetInt64(out var l) ? (object)l : el.GetDouble(),
-        JsonValueKind.True => true,
-        JsonValueKind.False => false,
-        _ => el.GetRawText(),
-    };
 
     private static IResult HandleWriteStarRatings(WriteStarRatingsRequest request, SettingService svc)
     {

@@ -1,0 +1,9 @@
+### 各模块可用性
+GET http://localhost:5048/api/status
+Accept: application/json
+
+### 计算 XXY SR
+POST http://localhost:5048/api/tools/xxy-calculate?speedRate=1.5
+Content-Type: text/plain
+
+< ../fixtures/pupa.osu
