@@ -1,0 +1,11 @@
+@baseUrl = http://localhost:5048
+@beatmapId = 4249325
+@beatmapsetId = 2034520
+
+### 查询谱面集信息
+GET {{baseUrl}}/api/osuapi/v2/beatmapsets/{{beatmapsetId}}
+Accept: application/json
+
+### 查询谱面详情
+GET {{baseUrl}}/api/osuapi/v2/beatmaps/{{beatmapId}}
+Accept: application/json

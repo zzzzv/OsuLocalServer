@@ -186,7 +186,7 @@
   if (!logBody) return;
 
   var connection = new signalR.HubConnectionBuilder()
-    .withUrl('/ws/management')
+    .withUrl('@ServerHub.Path')
     .withAutomaticReconnect()
     .build();
 

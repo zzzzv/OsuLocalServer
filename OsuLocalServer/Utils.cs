@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -6,6 +7,8 @@ namespace OsuLocalServer;
 
 public static class Utils
 {
+    public static string AppVersion =>
+        Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "0.0.0";
     private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new()
     {
         Mappings =

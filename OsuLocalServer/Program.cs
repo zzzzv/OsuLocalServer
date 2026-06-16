@@ -11,6 +11,7 @@ try
     var appSettings = AppSettings.Load();
 
     var builder = WebApplication.CreateBuilder(args);
+    builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
     builder.WebHost.UseUrls(appSettings.Urls);
 
     var allowedIPs = new[] { "localhost", "127.0.0.1", "::1" };
@@ -36,6 +37,7 @@ try
 
     builder.Services.AddSingleton<OsuApiV2AuthService>();
     builder.Services.AddSingleton<TaskManager>();
+    builder.Services.AddSingleton<VersionCheckService>();
 
     OsuApiV2Proxy.AddServices(builder.Services);
 
@@ -50,7 +52,7 @@ try
     settingService.Settings = appSettings;
 
     app.MapRazorPages();
-    app.MapHub<ManagementHub>("/ws/management");
+    app.MapHub<ServerHub>(ServerHub.Path);
 
     app.MapLazerRoutes();
     app.MapStableRoutes();
@@ -62,9 +64,8 @@ try
     app.MapReverseProxy();
     app.MapManagementRoutes();
 
-    var appVersion = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
     var startupLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
-    startupLogger.LogInformation("OsuLocalServer v{Version}", appVersion);
+    startupLogger.LogInformation("OsuLocalServer v{Version}", Utils.AppVersion);
 
     if (appSettings.OpenBrowserOnStartup)
     {

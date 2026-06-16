@@ -13,11 +13,13 @@ public class IndexModel : PageModel
     public string? Version { get; }
     public bool ApiV2Configured => _authService.IsConfigured;
     public bool ApiV2TokenValid => _authService.HasValidToken;
+    public VersionCheckResult? VersionCheck { get; }
 
-    public IndexModel(SettingService settings, OsuApiV2AuthService authService)
+    public IndexModel(SettingService settings, OsuApiV2AuthService authService, VersionCheckService versionChecker)
     {
         _settings = settings;
         _authService = authService;
-        Version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+        Version = Utils.AppVersion;
+        VersionCheck = versionChecker.Check();
     }
 }

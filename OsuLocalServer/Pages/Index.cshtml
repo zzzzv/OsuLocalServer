@@ -5,7 +5,9 @@
 }
 <div style="padding:20px; max-width:600px; margin:0 auto; line-height:2">
     <h1>OsuLocalServer</h1>
-    <p>版本: @Model.Version</p>
+    <p>版本: @Model.Version
+    <span id="version-check"></span>
+    </p>
 
     <h2>Stable</h2>
     <p>路径: @Model.Settings.Stable.OsuRootPath<br>
@@ -19,3 +21,33 @@
     <p>已配置: @(Model.ApiV2Configured ? "✅" : "❌")<br>
     令牌有效: @(Model.ApiV2TokenValid ? "✅" : "❌")</p>
 </div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+function updateVersionCheck(result) {
+  var el = document.getElementById("version-check");
+  if (!el) return;
+  if (result.isNewer) {
+    el.innerHTML = '<br><a href="@VersionCheckService.LatestUrl" target="_blank">📥 新版本 ' + result.latestVersion + ' 可用</a>';
+  } else if (result.isUpToDate) {
+    el.innerHTML = '<br><span style="color:green">✅ 已是最新版本</span>';
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+@if (Model.VersionCheck is not null)
+{
+  <text>updateVersionCheck(@Json.Serialize(Model.VersionCheck));</text>
+}
+
+const connection = new signalR.HubConnectionBuilder()
+  .withUrl('@ServerHub.Path')
+  .withAutomaticReconnect()
+  .build();
+
+connection.on("VersionCheckResult", updateVersionCheck);
+connection.start().catch(function() {});
+</script>
+}

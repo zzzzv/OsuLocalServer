@@ -90,6 +90,8 @@ public sealed class ApiV2Credentials
 {
     public string ClientId { get; set; } = "";
     public string ClientSecret { get; set; } = "";
+    public string? AccessToken { get; set; }
+    public DateTimeOffset TokenExpiresAt { get; set; } = DateTimeOffset.MinValue;
 }
 
 public sealed class ManagementSettings

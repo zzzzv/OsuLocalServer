@@ -9,16 +9,26 @@ public sealed class OsuApiV2AuthService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SettingService _settings;
+    private readonly ILogger<OsuApiV2AuthService> _logger;
 
     private string? _cachedToken;
     private DateTimeOffset _tokenExpiresAt;
 
     private static readonly Uri TokenEndpoint = new("https://osu.ppy.sh/oauth/token");
 
-    public OsuApiV2AuthService(IHttpClientFactory httpClientFactory, SettingService settings)
+    public OsuApiV2AuthService(IHttpClientFactory httpClientFactory, SettingService settings, ILogger<OsuApiV2AuthService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _settings = settings;
+        _logger = logger;
+
+        // 从持久化恢复 token
+        var cred = settings.Settings.ApiV2;
+        if (!string.IsNullOrWhiteSpace(cred.AccessToken) && DateTimeOffset.UtcNow < cred.TokenExpiresAt)
+        {
+            _cachedToken = cred.AccessToken;
+            _tokenExpiresAt = cred.TokenExpiresAt;
+        }
     }
 
     public bool HasValidToken =>
@@ -36,6 +46,9 @@ public sealed class OsuApiV2AuthService
     {
         _cachedToken = null;
         _tokenExpiresAt = DateTimeOffset.MinValue;
+        _settings.Settings.ApiV2.AccessToken = null;
+        _settings.Settings.ApiV2.TokenExpiresAt = DateTimeOffset.MinValue;
+        _settings.Settings.Save();
     }
 
     public async Task<string> GetValidAccessTokenAsync(CancellationToken cancellationToken = default)
@@ -71,6 +84,12 @@ public sealed class OsuApiV2AuthService
         _cachedToken = root.GetProperty("access_token").GetString();
         var expiresIn = root.GetProperty("expires_in").GetInt64();
         _tokenExpiresAt = DateTimeOffset.UtcNow.AddSeconds(expiresIn - 60); // 60s buffer
+
+        _settings.Settings.ApiV2.AccessToken = _cachedToken;
+        _settings.Settings.ApiV2.TokenExpiresAt = _tokenExpiresAt;
+        _settings.Settings.Save();
+
+        _logger.LogInformation("osu! API v2 access token acquired, expires at {ExpiresAt:O}", _tokenExpiresAt);
 
         return _cachedToken!;
     }

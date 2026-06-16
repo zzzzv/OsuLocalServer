@@ -23,12 +23,12 @@ public class TaskManager
     private CancellationTokenSource? _cts;
     private TaskState _state;
     private readonly ConcurrentQueue<LogEntry> _logBuffer = new();
-    private readonly IHubContext<ManagementHub> _hub;
+    private readonly IHubContext<ServerHub> _hub;
     private readonly IServiceScopeFactory _scopeFactory;
 
     public record LogEntry(string Time, string Level, string Message);
 
-    public TaskManager(IHubContext<ManagementHub> hub, IServiceScopeFactory scopeFactory)
+    public TaskManager(IHubContext<ServerHub> hub, IServiceScopeFactory scopeFactory)
     {
         _hub = hub;
         _scopeFactory = scopeFactory;

@@ -14,6 +14,7 @@ public static class SettingsRoutes
         var s = settings.Settings;
         return Results.Ok(new
         {
+            version = Utils.AppVersion,
             lazer = s.Lazer,
             stable = s.Stable,
             apiv2 = new
