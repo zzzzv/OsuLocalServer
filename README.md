@@ -17,7 +17,7 @@ osu本地数据服务
 | `/api/lazer/collections?rql=...&depth=N` | RQL 查询 Collection |
 | `/api/lazer/files/{hash}` | 按 hash 获取文件 |
 | `/api/osuapi/v2/**` | 反向代理到 osu.ppy.sh |
-| `/api/management/mania-sr/msgpack` | 已提取的谱面 SR 信息 |
+| `/api/management/mania-sr/msgpack` | 返回 `mania_sr.msgpack` 文件 |
 
 ### POST
 

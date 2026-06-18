@@ -1,4 +1,3 @@
-using MessagePack;
 using OsuLocalServer.Settings;
 
 namespace OsuLocalServer.Management;
@@ -16,17 +15,8 @@ public static class ManagementRoutes
     {
         var path = svc.Settings.Management.ManiaSRPackPath;
         if (!File.Exists(path))
-            return Results.Ok(new { count = 0, path });
+            return Results.NotFound();
 
-        try
-        {
-            var bytes = File.ReadAllBytes(path);
-            var data = MessagePackSerializer.Deserialize<Dictionary<string, ManiaSRData>>(bytes);
-            return Results.Ok(new { count = data?.Count ?? 0, path });
-        }
-        catch (Exception ex)
-        {
-            return Results.Problem(ex.Message);
-        }
+        return Results.File(path, "application/octet-stream", "mania_sr.msgpack");
     }
 }
