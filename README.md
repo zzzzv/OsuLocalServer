@@ -10,6 +10,7 @@ osu本地数据服务
 | ------ | ------ |
 | `/api/status` | 各模块可用性 |
 | `/api/stable/files/{**relativePath}` | 从 osu!stable 目录读取文件，支持 `*` 通配符 |
+| `/api/stable/folder/{**folderPath}` | 列出 stable 目录下指定文件夹内的所有文件名、大小和修改时间 |
 | `/api/lazer/scores?rql=...&depth=N` | RQL 查询 Score |
 | `/api/lazer/beatmaps?rql=...&depth=N` | RQL 查询 Beatmap |
 | `/api/lazer/beatmapsets?rql=...&depth=N` | RQL 查询 BeatmapSet |

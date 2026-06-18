@@ -6,7 +6,7 @@
 <div style="padding:20px; max-width:600px; margin:0 auto; line-height:2">
     <h1>OsuLocalServer</h1>
     <p>版本: @Model.Version
-    <span id="version-check"></span>
+    <span id="version-check"><span style="color:var(--muted)">⏳ 检查更新中...</span></span>
     </p>
 
     <h2>Stable</h2>
@@ -29,11 +29,11 @@ function updateVersionCheck(result) {
   var el = document.getElementById("version-check");
   if (!el) return;
   if (result.isNewer) {
-    el.innerHTML = '<br><a href="@VersionCheckService.LatestUrl" target="_blank">📥 新版本 ' + result.latestVersion + ' 可用</a>';
+    el.innerHTML = '<br><a href="@Model.LatestReleaseUrl" target="_blank">📥 新版本 ' + result.latestVersion + ' 可用</a>';
   } else if (result.isUpToDate) {
     el.innerHTML = '<br><span style="color:green">✅ 已是最新版本</span>';
-  } else {
-    el.innerHTML = '';
+  } else if (result.isNewer === false && result.isUpToDate === false) {
+    el.innerHTML = '<br><span style="color:var(--muted)">⚠ 检查更新失败</span>';
   }
 }
 
@@ -48,6 +48,10 @@ const connection = new signalR.HubConnectionBuilder()
   .build();
 
 connection.on("VersionCheckResult", updateVersionCheck);
+connection.on("VersionCheckFailed", function(source, reason) {
+  var el = document.getElementById("version-check");
+  if (el) el.innerHTML = '<br><span style="color:var(--muted)">⚠ ' + source + ': ' + reason + '</span>';
+});
 connection.start().catch(function() {});
 </script>
 }

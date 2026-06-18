@@ -93,12 +93,7 @@
         <div class="status-bar fail"><span class="status-dot fail"></span>API v2 未配置</div>
       }
 
-      @if (!string.IsNullOrEmpty(Model.Message))
-      {
-        <div class="alert @(Model.MessageType)">@Model.Message</div>
-      }
-
-      <form method="post">
+      <form method="post" id="settingsForm">
         <div class="section">
           <div class="section-title">服务器</div>
           <div class="form-group">
@@ -116,6 +111,22 @@
               <input type="checkbox" name="backupBeforeWrite" value="true" checked="@Model.BackupBeforeWrite">
               写入数据库前备份
             </label>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">更新</div>
+          <div class="form-group">
+            <label>更新检查源</label>
+            <label style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:0.88rem;cursor:pointer">
+              <input type="radio" name="updateSource" value="GitHub" checked="@(Model.UpdateSource == UpdateSource.GitHub)">
+              GitHub
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.88rem;cursor:pointer">
+              <input type="radio" name="updateSource" value="Gitee" checked="@(Model.UpdateSource == UpdateSource.Gitee)">
+              Gitee
+            </label>
+            <div class="hint">选择从哪个平台检查新版本</div>
           </div>
         </div>
 
@@ -149,8 +160,59 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-save" id="saveBtn">保存设置</button>
       </form>
+      <div id="toast" style="position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:0.88rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999">设置已更新</div>
     </div>
   </div>
 </div>
+
+@section Scripts {
+<script>
+(function() {
+  const form = document.getElementById('settingsForm');
+  const toast = document.getElementById('toast');
+  let toastTimer = null;
+
+  function showToast() {
+    toast.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  }
+
+  async function autoSave() {
+    const data = new URLSearchParams();
+    for (const el of form.elements) {
+      if (!el.name || el.disabled) continue;
+      if (el.type === 'checkbox') {
+        data.set(el.name, el.checked ? 'true' : 'false');
+      } else if (el.type === 'radio') {
+        if (el.checked) data.set(el.name, el.value);
+      } else {
+        data.set(el.name, el.value);
+      }
+    }
+
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: data,
+      });
+      if (res.ok) showToast();
+    } catch {}
+  }
+
+  form.addEventListener('blur', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type !== 'radio' && e.target.type !== 'checkbox') {
+      if (e.target.type === 'password' && !e.target.value) return;
+      autoSave();
+    }
+  }, true);
+  form.addEventListener('change', (e) => {
+    if (e.target.type === 'radio' || e.target.type === 'checkbox') {
+      autoSave();
+    }
+  });
+})();
+</script>
+}

@@ -1,9 +1,17 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using OsuLocalServer.Lazer;
 using OsuLocalServer.Stable;
 
 namespace OsuLocalServer.Settings;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum UpdateSource
+{
+    GitHub,
+    Gitee,
+}
 
 public sealed class AppSettings
 {
@@ -23,6 +31,7 @@ public sealed class AppSettings
     public string Urls { get; set; } = "http://localhost:5048";
     public bool OpenBrowserOnStartup { get; set; } = true;
     public bool BackupBeforeWrite { get; set; } = true;
+    public UpdateSource UpdateSource { get; set; } = UpdateSource.Gitee;
     public LazerSettings Lazer { get; set; } = new();
     public StableSettings Stable { get; set; } = new();
     public ApiV2Credentials ApiV2 { get; set; } = new();
@@ -70,7 +79,7 @@ public sealed class LazerSettings
 {
     public string ClientRealmPath { get; set; } = Path.Combine(LazerPaths.GetDefaultDataDirectory(), "client.realm");
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public bool Disable { get; set; }
 
     public bool IsAvailable => !Disable && LazerPaths.IsAvailable();
@@ -80,7 +89,7 @@ public sealed class StableSettings
 {
     public string OsuRootPath { get; set; } = StablePathResolver.TryFindOsuRootPath() ?? "";
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public bool Disable { get; set; }
 
     public bool IsAvailable => !Disable && StablePathResolver.IsValidOsuRoot(OsuRootPath);

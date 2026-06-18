@@ -9,11 +9,13 @@ public class SettingsModel : PageModel
 {
     private readonly SettingService _settings;
     private readonly OsuApiV2AuthService _authService;
+    private readonly VersionCheckService _versionChecker;
 
-    public SettingsModel(SettingService settings, OsuApiV2AuthService authService)
+    public SettingsModel(SettingService settings, OsuApiV2AuthService authService, VersionCheckService versionChecker)
     {
         _settings = settings;
         _authService = authService;
+        _versionChecker = versionChecker;
     }
 
     public string? Message { get; set; }
@@ -28,6 +30,7 @@ public class SettingsModel : PageModel
     public string ClientRealmPath => _settings.Settings.Lazer.ClientRealmPath;
     public string OsuRootPath => _settings.Settings.Stable.OsuRootPath;
     public string? ClientId => _authService.GetClientId();
+    public UpdateSource UpdateSource => _settings.Settings.UpdateSource;
 
     public void OnGet() { }
 
@@ -38,7 +41,8 @@ public class SettingsModel : PageModel
         string clientRealmPath,
         string osuRootPath,
         string clientId,
-        string clientSecret)
+        string clientSecret,
+        string updateSource)
     {
         var s = _settings.Settings;
 
@@ -53,6 +57,12 @@ public class SettingsModel : PageModel
 
         if (!string.IsNullOrWhiteSpace(osuRootPath))
             s.Stable.OsuRootPath = osuRootPath;
+
+        if (Enum.TryParse<UpdateSource>(updateSource, ignoreCase: true, out var parsed) && parsed != s.UpdateSource)
+        {
+            s.UpdateSource = parsed;
+            _versionChecker.ClearCache();
+        }
 
         if (!string.IsNullOrWhiteSpace(clientSecret))
         {

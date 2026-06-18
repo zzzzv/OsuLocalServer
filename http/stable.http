@@ -5,6 +5,10 @@
 GET {{baseUrl}}/api/stable/files/Songs/2034520 Ibuki Kido & Erii Yamazaki - pupa (TV Size)/Ibuki Kido & Erii Yamazaki - pupa (TV Size) (MapleSyrup-) [Another].osu
 Accept: application/octet-stream
 
+### 获取文件夹下所有文件名、大小和修改时间
+GET {{baseUrl}}/api/stable/folder/Data/bg
+Accept: application/json
+
 ### 获取 replay（通配符）
 GET {{baseUrl}}/api/stable/files/Data/r/{{beatmapMd5Hash}}-*.osr
 Accept: application/octet-stream

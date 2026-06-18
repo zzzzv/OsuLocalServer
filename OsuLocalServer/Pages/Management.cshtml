@@ -45,6 +45,12 @@
   .param-row.radio-row label:first-child { min-width: 70px; }
   .param-row.radio-row .radio-opt { min-width: auto; cursor: pointer; color: inherit; }
   .param-row.radio-row input { flex: none; width: auto; }
+  .tip-icon {
+    display: inline-block; width: 15px; height: 15px; border-radius: 50%;
+    background: var(--muted); color: #fff; font-size: 10px; line-height: 15px;
+    text-align: center; cursor: help; margin-left: 3px;
+  }
+  .tip-icon:hover { background: var(--accent); }
 
   .log-panel .card-body {
     padding: 0; min-height: 400px; max-height: 70vh;
@@ -125,7 +131,7 @@
             <div class="param-row radio-row">
               <label>目标</label>
               <label class="radio-opt"><input type="radio" name="target" value="Stable" checked="@(Model.WriteManiaSR.Target == ManiaSRTarget.Stable)"> Stable</label>
-              <label class="radio-opt"><input type="radio" name="target" value="Lazer" checked="@(Model.WriteManiaSR.Target == ManiaSRTarget.Lazer)"> Lazer</label>
+              <label class="radio-opt"><input type="radio" name="target" value="Lazer" checked="@(Model.WriteManiaSR.Target == ManiaSRTarget.Lazer)"> Lazer<span class="tip-icon" title="Lazer数据库的SR只影响过滤和排序">?</span></label>
             </div>
             <div class="param-row radio-row">
               <label>算法</label>

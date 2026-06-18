@@ -1,0 +1,81 @@
+name: Sync to Gitee
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="$(gh release list --limit 1 --json tagName --jq '.[0].tagName' --repo ${{ github.repository }})"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VER="${TAG#v}"
+          gh release download "$TAG" --repo ${{ github.repository }}
+          echo "VER=$VER" >> "$GITHUB_ENV"
+
+      - name: Sync to Gitee mirror
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+
+          # Clone Gitee mirror repo
+          git clone https://oauth2:${GITEE_TOKEN}@gitee.com/zzzzv/osu-tools.git gitee-mirror
+          cd gitee-mirror
+
+          # 创建项目目录
+          mkdir -p OsuLocalServer
+
+          # 复制产物
+          cp "${GITHUB_WORKSPACE}/OsuLocalServer-${VER}.exe" OsuLocalServer/
+
+          # 写入 version.txt
+          echo -n "${VER}" > OsuLocalServer/version.txt
+
+          # 构建 CHANGELOG.md
+          # 如果该版本已存在则覆盖，否则插入到最前
+          awk -v tag="$TAG" '
+            /^## / && index($0, "## " tag) == 1 { skip=1; next }
+            skip && /^## / { skip=0 }
+            !skip { print }
+          ' OsuLocalServer/CHANGELOG.md 2>/dev/null > /tmp/CHANGELOG.md.old || true
+          {
+            echo "# OsuLocalServer"
+            echo ""
+            echo "## ${TAG} ($(date +%Y-%m-%d))"
+            echo ""
+            gh release view "${TAG}" --json body --jq '.body' --repo ${{ github.repository }} 2>/dev/null || true
+            echo ""
+            cat /tmp/CHANGELOG.md.old
+          } > OsuLocalServer/CHANGELOG.md
+
+          # 提交并推送
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add -A
+          git diff --cached --quiet || {
+            git commit -m "Sync ${TAG}"
+            git push
+          }

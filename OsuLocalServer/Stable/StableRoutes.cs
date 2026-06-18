@@ -14,6 +14,7 @@ public static class StableRoutes
         group.AddEndpointFilter(StableAvailabilityFilter);
 
         group.MapGet("/files/{**relativePath}", HandleFile);
+        group.MapGet("/folder/{**folderPath}", HandleListFolder);
         group.MapPost("/collection/update", HandleCreateCollection);
         group.MapPost("/star-rating/update", HandleWriteManiaStarRatings);
     }
@@ -50,6 +51,35 @@ public static class StableRoutes
             return Results.NotFound();
 
         return Results.File(filePath, Utils.GetContentType(filePath), Path.GetFileName(filePath));
+    }
+
+    private static IResult HandleListFolder(string? folderPath, SettingService svc)
+    {
+        if (string.IsNullOrWhiteSpace(folderPath))
+            return Results.BadRequest(new { error = "需要提供文件夹路径" });
+
+        var root = svc.Settings.Stable.OsuRootPath;
+        var dir = Path.GetFullPath(Path.Combine(root, folderPath));
+
+        // 确保路径在 stable 根目录下，防止目录遍历攻击
+        if (!dir.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
+            return Results.BadRequest(new { error = "无效的文件夹路径" });
+
+        if (!Directory.Exists(dir))
+            return Results.NotFound(new { error = "文件夹不存在" });
+
+        var files = Directory.GetFiles(dir)
+            .Select(f => new FileInfo(f))
+            .Select(f => new
+            {
+                name = f.Name,
+                size = f.Length,
+                lastModified = f.LastWriteTime.ToString("O")
+            })
+            .OrderBy(f => f.name)
+            .ToList();
+
+        return Results.Ok(new { files });
     }
 
     private static IResult HandleCreateCollection(CreateCollectionRequest request, SettingService svc)

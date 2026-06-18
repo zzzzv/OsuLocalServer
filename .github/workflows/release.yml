@@ -62,4 +62,5 @@ jobs:
             Write-Host "Release $tag already exists, skipping."
             return
           }
-          gh release create $tag "${{ steps.version.outputs.exe }}" --title $tag --notes ""
+          $msg = git log -1 --format=%s
+          gh release create $tag "${{ steps.version.outputs.exe }}" --title $tag --notes $msg

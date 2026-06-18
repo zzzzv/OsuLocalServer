@@ -14,6 +14,7 @@ public class IndexModel : PageModel
     public bool ApiV2Configured => _authService.IsConfigured;
     public bool ApiV2TokenValid => _authService.HasValidToken;
     public VersionCheckResult? VersionCheck { get; }
+    public string LatestReleaseUrl { get; }
 
     public IndexModel(SettingService settings, OsuApiV2AuthService authService, VersionCheckService versionChecker)
     {
@@ -21,5 +22,6 @@ public class IndexModel : PageModel
         _authService = authService;
         Version = Utils.AppVersion;
         VersionCheck = versionChecker.Check();
+        LatestReleaseUrl = versionChecker.GetLatestUrl();
     }
 }
