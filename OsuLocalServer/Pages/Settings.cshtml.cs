@@ -26,7 +26,7 @@ public class SettingsModel : PageModel
     public bool TokenValid => _authService.HasValidToken;
     public string Urls => _settings.Settings.Urls;
     public bool OpenBrowserOnStartup => _settings.Settings.OpenBrowserOnStartup;
-    public bool BackupBeforeWrite => _settings.Settings.BackupBeforeWrite;
+    public bool BackupBeforeWrite => _settings.Settings.Stable.BackupBeforeWrite;
     public string ClientRealmPath => _settings.Settings.Lazer.ClientRealmPath;
     public string OsuRootPath => _settings.Settings.Stable.OsuRootPath;
     public string? ClientId => _authService.GetClientId();
@@ -50,7 +50,7 @@ public class SettingsModel : PageModel
             s.Urls = urls;
 
         s.OpenBrowserOnStartup = openBrowserOnStartup;
-        s.BackupBeforeWrite = backupBeforeWrite;
+        s.Stable.BackupBeforeWrite = backupBeforeWrite;
 
         if (!string.IsNullOrWhiteSpace(clientRealmPath))
             s.Lazer.ClientRealmPath = clientRealmPath;

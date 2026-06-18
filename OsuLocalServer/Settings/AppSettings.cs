@@ -30,7 +30,6 @@ public sealed class AppSettings
 
     public string Urls { get; set; } = "http://localhost:5048";
     public bool OpenBrowserOnStartup { get; set; } = true;
-    public bool BackupBeforeWrite { get; set; } = true;
     public UpdateSource UpdateSource { get; set; } = UpdateSource.Gitee;
     public LazerSettings Lazer { get; set; } = new();
     public StableSettings Stable { get; set; } = new();
@@ -87,6 +86,7 @@ public sealed class LazerSettings
 
 public sealed class StableSettings
 {
+    public bool BackupBeforeWrite { get; set; } = true;
     public string OsuRootPath { get; set; } = StablePathResolver.TryFindOsuRootPath() ?? "";
 
     [JsonIgnore]

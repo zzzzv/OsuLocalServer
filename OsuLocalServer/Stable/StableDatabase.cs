@@ -9,7 +9,7 @@ internal static class StableDatabase
     public static string GetBeatmapPath(this DbBeatmap beatmap, string osuRoot) =>
         Path.Combine(osuRoot, "Songs", beatmap.FolderName, beatmap.FileName);
 
-    public static CollectionOpResult AddToCollection(string osuRoot, string name, string[] beatmapMd5Hashes)
+    public static CollectionOpResult AddToCollection(string osuRoot, string name, string[] beatmapMd5Hashes, bool backup = false)
     {
         if (Utils.IsOsuProcessRunning(osuRoot))
             throw new InvalidOperationException("osu!stable 正在运行，无法写入 collection.db");
@@ -19,6 +19,7 @@ internal static class StableDatabase
 
         var existing = db.Collections.FirstOrDefault(c => c.Name == name);
         bool created;
+        bool changed = false;
 
         if (existing is not null)
         {
@@ -27,6 +28,7 @@ internal static class StableDatabase
             existingHashes.UnionWith(beatmapMd5Hashes);
             if (existingHashes.Count != existing.MD5Hashes.Count)
             {
+                changed = true;
                 existing.MD5Hashes.Clear();
                 existing.MD5Hashes.AddRange(existingHashes);
                 existing.Count = existing.MD5Hashes.Count;
@@ -35,11 +37,15 @@ internal static class StableDatabase
         else
         {
             created = true;
+            changed = true;
             var c = new Collection { Name = name };
             c.MD5Hashes.AddRange(beatmapMd5Hashes);
             c.Count = c.MD5Hashes.Count;
             db.Collections.Add(c);
         }
+
+        if (changed && backup)
+            Utils.BackupFile(dbPath);
 
         db.CollectionCount = db.Collections.Count;
         db.Save(dbPath);
@@ -48,7 +54,7 @@ internal static class StableDatabase
         return new CollectionOpResult(name, count, created);
     }
 
-    public static int WriteManiaStarRatings(string osuDbPath, Dictionary<string, StarRating> starRatings)
+    public static int WriteManiaStarRatings(string osuDbPath, Dictionary<string, StarRating> starRatings, bool backup = false)
     {
         var osuRoot = Path.GetDirectoryName(osuDbPath)!;
         if (Utils.IsOsuProcessRunning(osuRoot))
@@ -68,6 +74,9 @@ internal static class StableDatabase
                 updated++;
             }
         }
+
+        if (updated > 0 && backup)
+            Utils.BackupFile(osuDbPath);
 
         db.Save(osuDbPath);
         return updated;

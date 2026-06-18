@@ -52,8 +52,8 @@ public class WriteManiaSRTask
         var ratings = data
             .Where(kvp => kvp.Value is not null)
             .ToDictionary(kvp => kvp.Key, kvp => Algorithm == ManiaSRAlgorithm.XXY ? kvp.Value.XXY : kvp.Value.PPY);
-        var updated = StableDatabase.WriteManiaStarRatings(osuDbPath, ratings);
-        log.Info($"Stable 写入完成，共更新 {updated} 个谱面（使用 {Algorithm}）");
+        var updated = StableDatabase.WriteManiaStarRatings(osuDbPath, ratings, stable.BackupBeforeWrite);
+        log.Info($"Stable 写入完成，共更新 {updated} 个谱面(使用 {Algorithm})");
     }
 
     private void WriteToLazer(LazerSettings lazer, Dictionary<string, ManiaSRData> data, TaskLogger log)
@@ -68,6 +68,6 @@ public class WriteManiaSRTask
             .Where(kvp => kvp.Value is not null)
             .ToDictionary(kvp => kvp.Key, kvp => (Algorithm == ManiaSRAlgorithm.XXY ? kvp.Value.XXY : kvp.Value.PPY).NM);
         var updated = LazerRealm.WriteStarRatings(lazer.ClientRealmPath, ratings);
-        log.Info($"Lazer 写入完成，共更新 {updated} 个谱面（使用 {Algorithm} NM）");
+        log.Info($"Lazer 写入完成，共更新 {updated} 个谱面(使用 {Algorithm} NM)");
     }
 }

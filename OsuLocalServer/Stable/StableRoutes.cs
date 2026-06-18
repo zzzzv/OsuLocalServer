@@ -87,12 +87,7 @@ public static class StableRoutes
         if (string.IsNullOrWhiteSpace(request.Name))
             return Results.BadRequest(new { error = "需要提供收藏夹名称" });
 
-        var dbPath = Path.Combine(svc.Settings.Stable.OsuRootPath, "collection.db");
-
-        if (svc.Settings.BackupBeforeWrite)
-            Utils.BackupFile(dbPath);
-
-        var result = StableDatabase.AddToCollection(svc.Settings.Stable.OsuRootPath, request.Name, request.BeatmapMd5Hashes);
+        var result = StableDatabase.AddToCollection(svc.Settings.Stable.OsuRootPath, request.Name, request.BeatmapMd5Hashes, svc.Settings.Stable.BackupBeforeWrite);
         return Results.Ok(result);
     }
 
