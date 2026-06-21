@@ -37,7 +37,13 @@ public static class ToolsRoutes
         }
         catch (Exception ex)
         {
-            return Results.Problem(ex.Message, statusCode: 400);
+            var detail = ex.ToString();
+            if (ex.InnerException is not null)
+                detail += $"\n--- Inner Exception ---\n{ex.InnerException}";
+            return Results.Problem(
+                detail: detail,
+                title: $"XXY 计算失败: {ex.GetType().Name}",
+                statusCode: 400);
         }
     }
 }

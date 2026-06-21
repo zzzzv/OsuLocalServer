@@ -113,7 +113,10 @@ public static class LazerRoutes
         }
         catch (Exception ex)
         {
-            return Results.Problem(ex.Message, statusCode: 400);
+            return Results.Problem(
+                detail: FormatExceptionDetail(ex),
+                title: $"Star Rating 计算失败: {ex.GetType().Name}",
+                statusCode: 400);
         }
     }
 
@@ -130,6 +133,20 @@ public static class LazerRoutes
         return Results.Ok(new { updated });
     }
 
+    private static string FormatExceptionDetail(Exception ex)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(ex.ToString());
+
+        if (ex.InnerException is not null)
+        {
+            sb.AppendLine("--- Inner Exception ---");
+            sb.AppendLine(ex.InnerException.ToString());
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
     private static IResult RunQuery(Func<List<object>> queryFunc)
     {
         try
@@ -139,11 +156,17 @@ public static class LazerRoutes
         }
         catch (FileNotFoundException ex)
         {
-            return Results.Problem(ex.Message, statusCode: StatusCodes.Status503ServiceUnavailable);
+            return Results.Problem(
+                detail: FormatExceptionDetail(ex),
+                title: "Lazer 数据库文件未找到",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
         }
         catch (Exception ex)
         {
-            return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: FormatExceptionDetail(ex),
+                title: $"查询执行失败: {ex.GetType().Name}",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 }

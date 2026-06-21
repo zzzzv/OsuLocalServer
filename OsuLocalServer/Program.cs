@@ -11,7 +11,7 @@ try
     var appSettings = AppSettings.Load();
 
     var builder = WebApplication.CreateBuilder(args);
-    builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+    builder.Logging.AddFilter("Microsoft.AspNetCore.DataProtection", LogLevel.Warning);
     builder.WebHost.UseUrls(appSettings.Urls);
 
     var allowedIPs = new[] { "localhost", "127.0.0.1", "::1" };

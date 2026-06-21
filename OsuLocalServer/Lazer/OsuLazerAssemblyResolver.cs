@@ -41,16 +41,41 @@ internal static class OsuLazerAssemblyResolver
         if (lazerDirectory is null || !Directory.Exists(lazerDirectory))
             return null;
 
-        var directPath = Path.Combine(lazerDirectory, $"{assemblyName.Name}.dll");
+        // 1) 尝试从 lazer 目录加载
+        var dllPath = TryFindDll(assemblyName.Name);
+        if (dllPath is not null)
+        {
+            try
+            {
+                return context.LoadFromAssemblyPath(dllPath);
+            }
+            catch
+            {
+                // 版本不匹配等错误 — 继续尝试回退
+            }
+        }
+
+        // 2) 回退：检查是否已有同名程序集已加载（例如来自 NuGet 包的不同版本）
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            if (string.Equals(asm.GetName().Name, assemblyName.Name, StringComparison.OrdinalIgnoreCase))
+                return asm;
+        }
+
+        return null;
+    }
+
+    private static string? TryFindDll(string? assemblyName)
+    {
+        if (assemblyName is null || lazerDirectory is null)
+            return null;
+
+        var directPath = Path.Combine(lazerDirectory, $"{assemblyName}.dll");
         if (File.Exists(directPath))
-            return context.LoadFromAssemblyPath(directPath);
+            return directPath;
 
-        var recursiveMatch = Directory
-            .EnumerateFiles(lazerDirectory, $"{assemblyName.Name}.dll", SearchOption.AllDirectories)
+        return Directory
+            .EnumerateFiles(lazerDirectory, $"{assemblyName}.dll", SearchOption.AllDirectories)
             .FirstOrDefault();
-
-        return recursiveMatch is null
-            ? null
-            : context.LoadFromAssemblyPath(recursiveMatch);
     }
 }

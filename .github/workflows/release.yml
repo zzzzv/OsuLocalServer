@@ -62,5 +62,8 @@ jobs:
             Write-Host "Release $tag already exists, skipping."
             return
           }
-          $msg = git log -1 --format=%s
+          $prev = git describe --tags --abbrev=0 2>$null
+          if ($prev) { $range = "$prev..HEAD" } else { $range = "HEAD" }
+          $msg = git log $range --format="- %s" --reverse
+          if (-not $msg) { $msg = git log -1 --format=%s }
           gh release create $tag "${{ steps.version.outputs.exe }}" --title $tag --notes $msg

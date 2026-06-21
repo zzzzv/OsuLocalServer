@@ -107,7 +107,10 @@ public static class StableRoutes
         }
         catch (InvalidOperationException ex)
         {
-            return Results.Problem(ex.Message, statusCode: 409);
+            return Results.Problem(
+                detail: ex.ToString(),
+                title: "Star Rating 写入冲突",
+                statusCode: 409);
         }
     }
 }
