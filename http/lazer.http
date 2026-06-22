@@ -1,22 +1,42 @@
 @baseUrl = http://localhost:5048
 @beatmapHash = a4f58b4494a4ff0dc55c507495703b4f5be636fe0290ab046715f24671fdc7f7
 @beatmapMd5Hash = 3f3d8bd7f74dc3ffd9ea2ddb33ef1fbd
-@onlineId = 4249325
+@beatmapsetOnlineId = 2034520
 
-### 查询 Score
+### 查询 Score (无 noExpand)
 GET {{baseUrl}}/api/lazer/scores?rql=BeatmapHash==%22{{beatmapHash}}%22&depth=1
 Accept: application/json
 
-### 查询 Beatmap
+### 查询 Score (不展开 BeatmapInfo)
+GET {{baseUrl}}/api/lazer/scores?rql=BeatmapHash==%22{{beatmapHash}}%22&depth=2&noExpand=BeatmapInfo
+Accept: application/json
+
+### 查询 Score (不展开多个嵌套字段)
+GET {{baseUrl}}/api/lazer/scores?rql=BeatmapHash==%22{{beatmapHash}}%22&depth=3&noExpand=BeatmapInfo&noExpand=User&noExpand=ScoreInfo
+Accept: application/json
+
+### 查询 Beatmap (无 noExpand)
 GET {{baseUrl}}/api/lazer/beatmaps?rql=Hash==%22{{beatmapHash}}%22&depth=1
 Accept: application/json
 
-### 查询 BeatmapSet
-GET {{baseUrl}}/api/lazer/beatmapsets?rql=OnlineID=={{onlineId}}&depth=1
+### 查询 Beatmap (不展开多个嵌套字段)
+GET {{baseUrl}}/api/lazer/beatmaps?rql=Hash==%22{{beatmapHash}}%22&depth=3&noExpand=Ruleset&noExpand=UserSettings&noExpand=File&noExpand=Scores&noExpand=Beatmaps
 Accept: application/json
 
-### 查询 Collection
+### 查询 BeatmapSet (无 noExpand)
+GET {{baseUrl}}/api/lazer/beatmapsets?rql=OnlineID=={{beatmapsetOnlineId}}&depth=1
+Accept: application/json
+
+### 查询 BeatmapSet (不展开 BeatmapSetInfo — 自身递归字段)
+GET {{baseUrl}}/api/lazer/beatmapsets?rql=OnlineID=={{beatmapsetOnlineId}}&depth=2&noExpand=BeatmapSetInfo
+Accept: application/json
+
+### 查询 Collection (无 noExpand)
 GET {{baseUrl}}/api/lazer/collections?rql=Name==%22Test%22&depth=1
+Accept: application/json
+
+### 查询 Collection (不展开 BeatmapInfo)
+GET {{baseUrl}}/api/lazer/collections?rql=Name==%22Test%22&depth=2&noExpand=BeatmapInfo
 Accept: application/json
 
 ### 按 hash 获取文件

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Diagnostics;
 using osu.Game.Online.API;
 using OsuLocalServer.Settings;
 using Realms;
@@ -53,17 +54,17 @@ public static class LazerRoutes
         return await next(ctx);
     }
 
-    private static IResult HandleScores(string rql, int? depth, SettingService svc) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<ScoreInfo>().Filter(rql)));
+    private static IResult HandleScores(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
+        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<ScoreInfo>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
-    private static IResult HandleBeatmaps(string rql, int? depth, SettingService svc) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapInfo>().Filter(rql)));
+    private static IResult HandleBeatmaps(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
+        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapInfo>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
-    private static IResult HandleBeatmapSets(string rql, int? depth, SettingService svc) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapSetInfo>().Filter(rql)));
+    private static IResult HandleBeatmapSets(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
+        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapSetInfo>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
-    private static IResult HandleCollections(string rql, int? depth, SettingService svc) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapCollection>().Filter(rql)));
+    private static IResult HandleCollections(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
+        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapCollection>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
     private static IResult HandleFile(string hash, SettingService svc)
     {
@@ -147,12 +148,25 @@ public static class LazerRoutes
         return sb.ToString().TrimEnd();
     }
 
-    private static IResult RunQuery(Func<List<object>> queryFunc)
+    private static IResult RunQuery(Func<List<object>> queryFunc, ILogger logger)
     {
         try
         {
+            var sw = Stopwatch.StartNew();
             var items = queryFunc();
-            return Results.Ok(new { count = items.Count, items });
+            sw.Stop();
+            var queryTime = sw.ElapsedMilliseconds;
+
+            sw.Restart();
+            var response = new { count = items.Count, items };
+            var _ = JsonSerializer.Serialize(response, JsonOptions);
+            sw.Stop();
+            var serializeTime = sw.ElapsedMilliseconds;
+
+            logger.LogInformation("RunQuery: count={Count}, queryTime={QueryTime}ms, serializeTime={SerializeTime}ms",
+                items.Count, queryTime, serializeTime);
+
+            return Results.Ok(response);
         }
         catch (FileNotFoundException ex)
         {

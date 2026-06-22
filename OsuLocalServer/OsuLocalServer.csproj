@@ -9,7 +9,7 @@
     <PublishDir>..\publish\</PublishDir>
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
-    <Version>0.3.6</Version>
+    <Version>0.3.7</Version>
     <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
 

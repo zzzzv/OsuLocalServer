@@ -24,7 +24,7 @@ internal static class LazerRealm
         return Realm.GetInstance(config);
     }
 
-    public static List<object> Query(string clientRealmPath, string rql, int depth, Func<Realm, IEnumerable> queryFunc)
+    public static List<object> Query(string clientRealmPath, string rql, int depth, Func<Realm, IEnumerable> queryFunc, HashSet<string>? noExpandFields = null)
     {
         if (string.IsNullOrWhiteSpace(rql))
             throw new ArgumentException("RQL 查询字符串不能为空。", nameof(rql));
@@ -32,7 +32,7 @@ internal static class LazerRealm
         using var realm = OpenRealm(clientRealmPath);
 
         var items = queryFunc(realm).Cast<object>().ToList();
-        return RealmConverter.ToList(items, depth);
+        return RealmConverter.ToList(items, depth, noExpandFields);
     }
 
     public static CollectionOpResult AddToCollection(string clientRealmPath, string name, string[] beatmapMd5Hashes)
