@@ -19,6 +19,10 @@ osu本地数据服务
 | `/api/osuapi/v2/**` | 反向代理到 osu.ppy.sh |
 | `/api/management/mania-sr/msgpack` | 返回 `mania_sr.msgpack` 文件 |
 
+> **查询参数说明**：  
+> `depth` — 递归展开层数，默认 `0`（仅顶层），`1` 展开直接属性，`2` 展开嵌套属性，以此类推。  
+> `noExpand` — 跳过指定字段的递归展开，可重复使用（`&noExpand=FieldA&noExpand=FieldB`），用于控制返回数据大小，避免对象图循环膨胀。
+
 ### POST
 
 #### `/api/stable/collection/update`
