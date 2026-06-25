@@ -90,7 +90,7 @@ public static class LazerRoutes
         if (!File.Exists(path))
             return Results.Problem("未找到 client.realm。", statusCode: 404);
 
-        var result = LazerRealm.AddToCollection(path, request.Name, request.BeatmapMd5Hashes);
+        var result = LazerRealm.AddToCollection(path, request.Name, request.BeatmapMd5Hashes, request.Overwrite);
         return Results.Ok(result);
     }
 

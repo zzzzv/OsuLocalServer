@@ -9,7 +9,7 @@ internal static class StableDatabase
     public static string GetBeatmapPath(this DbBeatmap beatmap, string osuRoot) =>
         Path.Combine(osuRoot, "Songs", beatmap.FolderName, beatmap.FileName);
 
-    public static CollectionOpResult AddToCollection(string osuRoot, string name, string[] beatmapMd5Hashes, bool backup = false)
+    public static CollectionOpResult AddToCollection(string osuRoot, string name, string[] beatmapMd5Hashes, bool overwrite = false, bool backup = false)
     {
         if (Utils.IsOsuProcessRunning(osuRoot))
             throw new InvalidOperationException("osu!stable 正在运行，无法写入 collection.db");
@@ -24,14 +24,26 @@ internal static class StableDatabase
         if (existing is not null)
         {
             created = false;
-            var existingHashes = new HashSet<string>(existing.MD5Hashes);
-            existingHashes.UnionWith(beatmapMd5Hashes);
-            if (existingHashes.Count != existing.MD5Hashes.Count)
+            if (overwrite)
             {
-                changed = true;
+                // 覆盖模式：直接用新列表替换
                 existing.MD5Hashes.Clear();
-                existing.MD5Hashes.AddRange(existingHashes);
+                existing.MD5Hashes.AddRange(beatmapMd5Hashes);
                 existing.Count = existing.MD5Hashes.Count;
+                changed = true;
+            }
+            else
+            {
+                // 追加模式：合并去重
+                var existingHashes = new HashSet<string>(existing.MD5Hashes);
+                existingHashes.UnionWith(beatmapMd5Hashes);
+                if (existingHashes.Count != existing.MD5Hashes.Count)
+                {
+                    changed = true;
+                    existing.MD5Hashes.Clear();
+                    existing.MD5Hashes.AddRange(existingHashes);
+                    existing.Count = existing.MD5Hashes.Count;
+                }
             }
         }
         else

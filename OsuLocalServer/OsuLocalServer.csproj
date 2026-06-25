@@ -10,7 +10,7 @@
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
     <ServerGarbageCollection>false</ServerGarbageCollection>
-    <Version>0.3.8</Version>
+    <Version>0.3.9</Version>
     <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
 

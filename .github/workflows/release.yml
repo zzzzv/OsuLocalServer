@@ -68,4 +68,4 @@ jobs:
           if ($prev) { $range = "$prev..HEAD" } else { $range = "HEAD" }
           $msg = git log $range --format="- %s" --reverse
           if (-not $msg) { $msg = git log -1 --format=%s }
-          gh release create $tag "${{ steps.version.outputs.exe }}" --title $tag --notes $msg
+          gh release create $tag "${{ steps.version.outputs.exe }}" --title $tag --notes "$msg"

@@ -27,10 +27,10 @@ osu本地数据服务
 
 #### `/api/stable/collection/update`
 
-更新 stable 收藏夹，追加 beatmap md5hash。
+更新 stable 收藏夹。`overwrite` 为 `true` 时覆盖（替换整个收藏夹），为 `false`（默认）时追加去重。
 
 ```json
-{ "name": "...", "beatmapMd5Hashes": ["...", "..."] }
+{ "name": "...", "beatmapMd5Hashes": ["...", "..."], "overwrite": false }
 ```
 
 #### `/api/stable/star-rating/update`
@@ -43,10 +43,10 @@ osu本地数据服务
 
 #### `/api/lazer/collection/update`
 
-更新 lazer 收藏夹，追加 beatmap md5hash。
+更新 lazer 收藏夹。`overwrite` 为 `true` 时覆盖（替换整个收藏夹），为 `false`（默认）时追加去重。
 
 ```json
-{ "name": "...", "beatmapMd5Hashes": ["...", "..."] }
+{ "name": "...", "beatmapMd5Hashes": ["...", "..."], "overwrite": false }
 ```
 
 #### `/api/lazer/star-rating/calculate?mods=...`

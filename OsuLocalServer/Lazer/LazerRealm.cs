@@ -35,7 +35,7 @@ internal static class LazerRealm
         return RealmConverter.ToList(items, depth, noExpandFields);
     }
 
-    public static CollectionOpResult AddToCollection(string clientRealmPath, string name, string[] beatmapMd5Hashes)
+    public static CollectionOpResult AddToCollection(string clientRealmPath, string name, string[] beatmapMd5Hashes, bool overwrite = false)
     {
         using var realm = OpenRealm(clientRealmPath, false);
 
@@ -48,10 +48,21 @@ internal static class LazerRealm
             if (existing is not null)
             {
                 wasNew = false;
-                foreach (var hash in beatmapMd5Hashes)
+                if (overwrite)
                 {
-                    if (!existing.BeatmapMD5Hashes.Contains(hash))
+                    // 覆盖模式：直接用新列表替换
+                    existing.BeatmapMD5Hashes.Clear();
+                    foreach (var hash in beatmapMd5Hashes)
                         existing.BeatmapMD5Hashes.Add(hash);
+                }
+                else
+                {
+                    // 追加模式：合并去重
+                    foreach (var hash in beatmapMd5Hashes)
+                    {
+                        if (!existing.BeatmapMD5Hashes.Contains(hash))
+                            existing.BeatmapMD5Hashes.Add(hash);
+                    }
                 }
                 existing.LastModified = DateTimeOffset.UtcNow;
             }

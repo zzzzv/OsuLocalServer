@@ -20,7 +20,7 @@ GET {{baseUrl}}/api/lazer/beatmaps?rql=Hash==%22{{beatmapHash}}%22&depth=1
 Accept: application/json
 
 ### 查询 Beatmap (不展开多个嵌套字段)
-GET {{baseUrl}}/api/lazer/beatmaps?rql=Hash==%22{{beatmapHash}}%22&depth=3&noExpand=Ruleset&noExpand=UserSettings&noExpand=File&noExpand=Scores&noExpand=Beatmaps
+GET {{baseUrl}}/api/lazer/beatmaps?rql=Hash==%22{{beatmapHash}}%22&depth=3&noExpand=Ruleset&noExpand=UserSettings&noExpand=File&noExpand=Beatmaps
 Accept: application/json
 
 ### 查询 BeatmapSet (无 noExpand)
