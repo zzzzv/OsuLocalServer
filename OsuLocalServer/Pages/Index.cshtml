@@ -20,6 +20,19 @@
     <h2>API v2</h2>
     <p>已配置: @(Model.ApiV2Configured ? "✅" : "❌")<br>
     令牌有效: @(Model.ApiV2TokenValid ? "✅" : "❌")</p>
+
+    <h2>Mania Lab</h2>
+    <p>
+      版本: <span id="mania-lab-version">@(Model.ManiaLabState.InstalledVersion ?? "未安装")</span>
+      <span id="mania-lab-status"></span>
+      <span id="mania-lab-progress" style="display:none;color:var(--running)"></span>
+    </p>
+    <p>
+      <a href="@Model.ManiaLabUrl" target="_blank" id="mania-lab-link"
+         style="display:@(Model.ManiaLabState.IsAvailable ? "inline" : "none")">
+        🔗 新窗口打开
+      </a>
+    </p>
 </div>
 
 @section Scripts {
@@ -48,6 +61,50 @@ const connection = new signalR.HubConnectionBuilder()
   .build();
 
 connection.on("VersionCheckResult", updateVersionCheck);
+
+// ManiaLab events
+function updateManiaLab(result) {
+  var el = document.getElementById("mania-lab-version");
+  if (el && result.latestVersion) {
+    el.textContent = result.latestVersion;
+  }
+  var status = document.getElementById("mania-lab-status");
+  if (status) {
+    if (result.error) {
+      status.innerHTML = '<span style="color:var(--error)">⚠ ' + result.error + '</span>';
+    } else {
+      status.innerHTML = '<span style="color:var(--muted)">✅ 已是最新</span>';
+    }
+  }
+}
+
+connection.on("ManiaLabVersionResult", updateManiaLab);
+connection.on("ManiaLabVersionFailed", function(source, reason) {
+  var status = document.getElementById("mania-lab-status");
+  if (status) status.innerHTML = '<span style="color:var(--error)">⚠ ' + source + ': ' + reason + '</span>';
+});
+connection.on("ManiaLabDownloadProgress", function(msg) {
+  var el = document.getElementById("mania-lab-progress");
+  if (el) { el.style.display = "inline"; el.textContent = "⏳ " + msg; }
+  var status = document.getElementById("mania-lab-status");
+  if (status) status.innerHTML = '';
+});
+connection.on("ManiaLabDownloadComplete", function(version) {
+  var el = document.getElementById("mania-lab-progress");
+  if (el) { el.style.display = "none"; }
+  var v = document.getElementById("mania-lab-version");
+  if (v) v.textContent = version;
+  var link = document.getElementById("mania-lab-link");
+  if (link) link.style.display = "inline";
+  var status = document.getElementById("mania-lab-status");
+  if (status) status.innerHTML = '<span style="color:green">✅ 下载完成</span>';
+});
+connection.on("ManiaLabDownloadFailed", function(version, reason) {
+  var el = document.getElementById("mania-lab-progress");
+  if (el) { el.style.display = "none"; el.textContent = ''; }
+  var status = document.getElementById("mania-lab-status");
+  if (status) status.innerHTML = '<span style="color:var(--error)">⚠ 下载失败: ' + reason + '</span>';
+});
 connection.on("VersionCheckFailed", function(source, reason) {
   var el = document.getElementById("version-check");
   if (el) el.innerHTML = '<br><span style="color:var(--muted)">⚠ ' + source + ': ' + reason + '</span>';

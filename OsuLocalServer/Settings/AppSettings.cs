@@ -26,6 +26,7 @@ public sealed class AppSettings
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         ReadCommentHandling = JsonCommentHandling.Skip,
+        IgnoreReadOnlyProperties = true,
     };
 
     public string Urls { get; set; } = "http://localhost:5048";
@@ -35,6 +36,7 @@ public sealed class AppSettings
     public StableSettings Stable { get; set; } = new();
     public ApiV2Credentials ApiV2 { get; set; } = new();
     public ManagementSettings Management { get; set; } = new();
+    public ManiaLabSettings ManiaLab { get; set; } = new();
 
     public static AppSettings Load()
     {
@@ -55,6 +57,7 @@ public sealed class AppSettings
             settings.Stable ??= new StableSettings();
             settings.ApiV2 ??= new ApiV2Credentials();
             settings.Management ??= new ManagementSettings();
+            settings.ManiaLab ??= new ManiaLabSettings();
             return settings;
         }
         catch
@@ -106,4 +109,61 @@ public sealed class ApiV2Credentials
 public sealed class ManagementSettings
 {
     public string ManiaSRPackPath { get; set; } = Path.Combine(AppSettings.StorageDir, "mania_sr.msgpack");
+}
+
+public sealed class ManiaLabSettings
+{
+    /// <summary>null 或 "latest" 表示自动使用最新已安装版本。</summary>
+    public string? SelectedVersion { get; set; }
+
+    public string VersionsDir => Path.Combine(AppSettings.StorageDir, "mania-lab");
+    public string VersionDir(string version) => Path.Combine(VersionsDir, version);
+
+    public string? SelectedVersionEffective
+    {
+        get
+        {
+            var installed = InstalledVersions;
+            if (SelectedVersion is null or "latest")
+                return installed.FirstOrDefault();
+            return installed.Contains(SelectedVersion) ? SelectedVersion : installed.FirstOrDefault();
+        }
+    }
+
+    public string? CurrentDir
+    {
+        get
+        {
+            var v = SelectedVersionEffective;
+            return v is not null ? VersionDir(v) : null;
+        }
+    }
+
+    public List<string> InstalledVersions
+    {
+        get
+        {
+            if (!Directory.Exists(VersionsDir))
+                return new List<string>();
+
+            return Directory.GetDirectories(VersionsDir)
+                .Select(Path.GetFileName)
+                .Where(v => v is not null && File.Exists(Path.Combine(VersionsDir, v, "index.html")))
+                .OrderByDescending(v => v)
+                .ToList()!;
+        }
+    }
+
+    public bool IsAvailable => SelectedVersionEffective is not null
+        && Directory.Exists(CurrentDir)
+        && File.Exists(Path.Combine(CurrentDir!, "index.html"));
+
+    public static string? ExtractVersionFromZipName(string fileName)
+    {
+        const string prefix = "mania-lab-";
+        const string suffix = ".zip";
+        if (fileName.StartsWith(prefix) && fileName.EndsWith(suffix))
+            return fileName.Substring(prefix.Length, fileName.Length - prefix.Length - suffix.Length);
+        return null;
+    }
 }

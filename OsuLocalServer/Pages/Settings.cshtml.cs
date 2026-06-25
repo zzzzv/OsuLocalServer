@@ -10,12 +10,14 @@ public class SettingsModel : PageModel
     private readonly SettingService _settings;
     private readonly OsuApiV2AuthService _authService;
     private readonly VersionCheckService _versionChecker;
+    private readonly ManiaLabService _maniaLab;
 
-    public SettingsModel(SettingService settings, OsuApiV2AuthService authService, VersionCheckService versionChecker)
+    public SettingsModel(SettingService settings, OsuApiV2AuthService authService, VersionCheckService versionChecker, ManiaLabService maniaLab)
     {
         _settings = settings;
         _authService = authService;
         _versionChecker = versionChecker;
+        _maniaLab = maniaLab;
     }
 
     public string? Message { get; set; }
@@ -32,6 +34,11 @@ public class SettingsModel : PageModel
     public string? ClientId => _authService.GetClientId();
     public UpdateSource UpdateSource => _settings.Settings.UpdateSource;
 
+    // ManiaLab
+    public List<string> InstalledManiaLabVersions => _settings.Settings.ManiaLab.InstalledVersions;
+    public string? SelectedManiaLabVersion => _settings.Settings.ManiaLab.SelectedVersion;
+    public string ManiaLabVersionsDir => _settings.Settings.ManiaLab.VersionsDir;
+
     public void OnGet() { }
 
     public IActionResult OnPost(
@@ -42,7 +49,8 @@ public class SettingsModel : PageModel
         string osuRootPath,
         string clientId,
         string clientSecret,
-        string updateSource)
+        string updateSource,
+        string? maniaLabVersion)
     {
         var s = _settings.Settings;
 
@@ -73,6 +81,10 @@ public class SettingsModel : PageModel
             };
             _authService.ClearToken();
         }
+
+        // ManiaLab 版本切换
+        if (maniaLabVersion is not null)
+            _maniaLab.SelectVersion(maniaLabVersion == "latest" ? null : maniaLabVersion);
 
         _settings.Settings.Save();
         Message = "Settings saved";

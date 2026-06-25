@@ -160,6 +160,29 @@
           </div>
         </div>
 
+        <div class="section">
+          <div class="section-title">Mania Lab 前端</div>
+          <div class="form-group">
+            <label for="maniaLabVersion">挂载版本</label>
+            <select name="maniaLabVersion" id="maniaLabVersion" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);font-size:0.88rem;outline:none">
+              @{
+                var isLatest = Model.SelectedManiaLabVersion is null or "latest";
+                var latestLabel = "latest（" + (Model.InstalledManiaLabVersions.FirstOrDefault() ?? "未安装") + "）";
+              }
+              <option value="latest" selected="@isLatest">@latestLabel</option>
+              @foreach (var v in Model.InstalledManiaLabVersions)
+              {
+                <option value="@v" selected="@(v == Model.SelectedManiaLabVersion)">@v</option>
+              }
+            </select>
+            <div class="hint">选择挂载到 /mania-lab 的前端版本；latest 始终指向最新已安装版本</div>
+          </div>
+          <div class="form-group">
+            <label>数据目录</label>
+            <span style="font-size:0.82rem;color:var(--muted)">@Model.ManiaLabVersionsDir</span>
+          </div>
+        </div>
+
       </form>
       <div id="toast" style="position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:0.88rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999">设置已更新</div>
     </div>
