@@ -4,6 +4,23 @@
     ViewData["Title"] = "状态";
 }
 <div style="padding:20px; max-width:600px; margin:0 auto; line-height:2">
+
+    <!-- Mania Lab 前端 - 置顶醒目 -->
+    <div style="background:var(--card-bg);border:2px solid var(--accent);border-radius:12px;padding:20px 24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(74,125,255,.15)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:1.1rem;font-weight:600;color:var(--accent)">Mania Lab 前端</span>
+        <a href="@Model.ManiaLabUrl" target="_blank" id="mania-lab-link"
+           style="display:@(Model.ManiaLabState.IsAvailable ? "inline-flex" : "none");align-items:center;gap:4px;padding:6px 14px;border-radius:6px;background:var(--accent);color:#fff;font-size:0.85rem;font-weight:500">
+          🔗 新窗口打开
+        </a>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <span>版本: <strong id="mania-lab-version">@(Model.ManiaLabState.InstalledVersion ?? "未安装")</strong></span>
+        <span id="mania-lab-status"></span>
+        <span id="mania-lab-progress" style="display:none;color:var(--running);font-weight:500"></span>
+      </div>
+    </div>
+
     <h1>OsuLocalServer</h1>
     <p>版本: @Model.Version
     <span id="version-check"><span style="color:var(--muted)">⏳ 检查更新中...</span></span>
@@ -20,19 +37,6 @@
     <h2>API v2</h2>
     <p>已配置: @(Model.ApiV2Configured ? "✅" : "❌")<br>
     令牌有效: @(Model.ApiV2TokenValid ? "✅" : "❌")</p>
-
-    <h2>Mania Lab</h2>
-    <p>
-      版本: <span id="mania-lab-version">@(Model.ManiaLabState.InstalledVersion ?? "未安装")</span>
-      <span id="mania-lab-status"></span>
-      <span id="mania-lab-progress" style="display:none;color:var(--running)"></span>
-    </p>
-    <p>
-      <a href="@Model.ManiaLabUrl" target="_blank" id="mania-lab-link"
-         style="display:@(Model.ManiaLabState.IsAvailable ? "inline" : "none")">
-        🔗 新窗口打开
-      </a>
-    </p>
 </div>
 
 @section Scripts {

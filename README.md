@@ -2,7 +2,11 @@
 
 osu本地数据服务
 
-复杂功能由挂载的 [mania-lab](https://github.com/zzzzv/mania-lab) 前端实现
+## Mania Lab 前端
+
+[仓库地址](https://github.com/zzzzv/mania-lab)
+
+打开首页自动下载最新版，设置页可切换已下载版本。
 
 ## 页面
 
