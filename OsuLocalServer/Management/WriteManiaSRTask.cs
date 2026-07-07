@@ -51,7 +51,7 @@ public class WriteManiaSRTask
         var osuDbPath = Path.Combine(stable.OsuRootPath, "osu!.db");
         var ratings = data
             .Where(kvp => kvp.Value is not null)
-            .ToDictionary(kvp => kvp.Key, kvp => Algorithm == ManiaSRAlgorithm.XXY ? kvp.Value.XXY : kvp.Value.PPY);
+            .ToDictionary(kvp => kvp.Key, kvp => SelectRating(kvp.Value));
         var updated = StableDatabase.WriteManiaStarRatings(osuDbPath, ratings, stable.BackupBeforeWrite);
         log.Info($"Stable 写入完成，共更新 {updated} 个谱面(使用 {Algorithm})");
     }
@@ -66,8 +66,16 @@ public class WriteManiaSRTask
 
         var ratings = data
             .Where(kvp => kvp.Value is not null)
-            .ToDictionary(kvp => kvp.Key, kvp => (Algorithm == ManiaSRAlgorithm.XXY ? kvp.Value.XXY : kvp.Value.PPY).NM);
+            .ToDictionary(kvp => kvp.Key, kvp => SelectRating(kvp.Value).NM);
         var updated = LazerRealm.WriteStarRatings(lazer.ClientRealmPath, ratings);
         log.Info($"Lazer 写入完成，共更新 {updated} 个谱面(使用 {Algorithm} NM)");
+    }
+
+    private StarRating SelectRating(ManiaSRData data)
+    {
+        // XXY 有效则用 XXY，否则回退到 PPY
+        if (Algorithm == ManiaSRAlgorithm.XXY && data.XXY is not { NM: 0, HT: 0, DT: 0 })
+            return data.XXY;
+        return data.PPY;
     }
 }
