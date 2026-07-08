@@ -30,10 +30,10 @@
     font-size: 0.88rem; font-weight: 500; margin-bottom: 8px;
   }
   .param-row {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px; margin-bottom: 6px;
     font-size: 0.82rem;
   }
-  .param-row label { color: var(--muted); min-width: 70px; flex-shrink: 0; }
+  .param-row label { color: var(--muted); min-width: 44px; flex-shrink: 0; }
   .param-row input, .param-row select {
     flex: 1; padding: 4px 7px; border: 1px solid var(--border); border-radius: 4px;
     font-size: 0.82rem; outline: none;
@@ -42,7 +42,7 @@
   .param-row.checkbox-row label { min-width: auto; cursor: pointer; }
   .param-row.checkbox-row input { flex: none; width: auto; }
   .param-row.radio-row { gap: 2px; }
-  .param-row.radio-row label:first-child { min-width: 70px; }
+  .param-row.radio-row label:first-child { min-width: 44px; }
   .param-row.radio-row .radio-opt { min-width: auto; cursor: pointer; color: inherit; }
   .param-row.radio-row input { flex: none; width: auto; }
   .tip-icon {
@@ -137,6 +137,34 @@
               <label>算法</label>
               <label class="radio-opt"><input type="radio" name="algorithm" value="PPY" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.PPY)"> PPY</label>
               <label class="radio-opt"><input type="radio" name="algorithm" value="XXY" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.XXY)"> XXY</label>
+            </div>
+            <div style="margin-top:10px">
+              @if (!Model.IsRunning)
+              {
+                <button type="submit" class="btn btn-primary">▶ 开始</button>
+              }
+              else
+              {
+                <button type="submit" class="btn btn-primary" disabled>运行中...</button>
+              }
+            </div>
+          </form>
+        </div>
+
+        <div class="task-card">
+          <div class="name">创建 PP 收藏夹</div>
+          <form method="post" asp-page-handler="createPPCollection">
+            <div class="param-row radio-row">
+              <label>来源</label>
+              <label class="radio-opt"><input type="radio" name="source" value="Stable" checked="@(Model.CreatePPCollection.Source == PPCollectionSource.Stable)"> Stable</label>
+              <label class="radio-opt"><input type="radio" name="source" value="Lazer" checked="@(Model.CreatePPCollection.Source == PPCollectionSource.Lazer)"> Lazer</label>
+            </div>
+            <div class="param-row">
+              <label>阈值</label>
+              <label style="min-width:auto">XXY-PPY&lt;</label>
+              <input type="number" name="threshold" value="@Model.CreatePPCollection.Threshold.ToString("0.0")" min="0" max="10" step="0.1" style="max-width:54px">
+              <label style="min-width:auto;margin-left:4px">PPY&gt;</label>
+              <input type="number" name="minPpy" value="@Model.CreatePPCollection.MinPPY.ToString("0.0")" min="0" max="20" step="0.5" style="max-width:54px">
             </div>
             <div style="margin-top:10px">
               @if (!Model.IsRunning)

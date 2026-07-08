@@ -16,6 +16,7 @@ public class ManagementModel : PageModel
 
     public GenerateManiaSRTask GenerateManiaSR { get; } = new();
     public WriteManiaSRTask WriteManiaSR { get; } = new();
+    public CreatePPCollectionTask CreatePPCollection { get; } = new();
 
     public void OnGet()
     {
@@ -30,6 +31,13 @@ public class ManagementModel : PageModel
             WriteManiaSR.Target = target;
         if (Request.Cookies["write_algorithm"] is string a && Enum.TryParse<ManiaSRAlgorithm>(a, out var alg))
             WriteManiaSR.Algorithm = alg;
+
+        if (Request.Cookies["pp_source"] is string src && Enum.TryParse<PPCollectionSource>(src, out var source))
+            CreatePPCollection.Source = source;
+        if (Request.Cookies["pp_threshold"] is string th && double.TryParse(th, out var threshold))
+            CreatePPCollection.Threshold = threshold;
+        if (Request.Cookies["pp_minPpy"] is string mp && double.TryParse(mp, out var minPpy))
+            CreatePPCollection.MinPPY = minPpy;
     }
 
     public IActionResult OnPostGenerate(int parallelism, bool logXxyErrors, bool saveCheckpoint)
@@ -55,6 +63,20 @@ public class ManagementModel : PageModel
         Response.Cookies.Append("write_algorithm", WriteManiaSR.Algorithm.ToString(), new CookieOptions { MaxAge = TimeSpan.FromDays(365) });
 
         _tm.Start(WriteManiaSR.Create());
+        return RedirectToPage();
+    }
+
+    public IActionResult OnPostCreatePPCollection(PPCollectionSource source, double threshold, double minPpy)
+    {
+        CreatePPCollection.Source = source;
+        CreatePPCollection.Threshold = Math.Max(0, threshold);
+        CreatePPCollection.MinPPY = Math.Max(0, minPpy);
+
+        Response.Cookies.Append("pp_source", CreatePPCollection.Source.ToString(), new CookieOptions { MaxAge = TimeSpan.FromDays(365) });
+        Response.Cookies.Append("pp_threshold", CreatePPCollection.Threshold.ToString("0.0"), new CookieOptions { MaxAge = TimeSpan.FromDays(365) });
+        Response.Cookies.Append("pp_minPpy", CreatePPCollection.MinPPY.ToString("0.0"), new CookieOptions { MaxAge = TimeSpan.FromDays(365) });
+
+        _tm.Start(CreatePPCollection.Create());
         return RedirectToPage();
     }
 
