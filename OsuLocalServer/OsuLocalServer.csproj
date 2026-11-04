@@ -10,7 +10,7 @@
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
     <ServerGarbageCollection>false</ServerGarbageCollection>
-    <Version>0.4.4</Version>
+    <Version>0.5.0</Version>
     <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
 
@@ -36,14 +36,14 @@
     <Reference Include="Realm">
       <HintPath>$(OsuLazerCurrentDir)\Realm.dll</HintPath>
       <Private>false</Private>
-    </Reference>
-  </ItemGroup>
+    </Reference>  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="3.1.7" />
     <PackageReference Include="StarRatingRebirth" Version="0.1.1" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
     <PackageReference Include="zzzzv.OsuParsers" Version="1.7.2" />
+    <PackageReference Include="zzzzv.SPMRating" Version="1.2.0" />
   </ItemGroup>
 
 </Project>

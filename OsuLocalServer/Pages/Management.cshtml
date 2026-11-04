@@ -112,6 +112,26 @@
                 阶段写入
               </label>
             </div>
+            <div class="param-row checkbox-row">
+              <label>
+                <input type="checkbox" name="computeXxy" value="true" checked="@Model.GenerateManiaSR.ComputeXxy">
+                计算 XXY
+              </label>
+              <label style="margin-left:8px">
+                <input type="checkbox" name="computeSpm" value="true" checked="@Model.GenerateManiaSR.ComputeSpm">
+                计算 SPM
+              </label>
+            </div>
+            <div class="param-row checkbox-row">
+              <label>
+                <input type="checkbox" name="resetFailed" value="true">
+                重算失败项
+              </label>
+              <label style="margin-left:8px">
+                <input type="checkbox" name="reimportPpy" value="true">
+                重新导入 PPY
+              </label>
+            </div>
             <div style="margin-top:10px">
               @if (!Model.IsRunning)
               {
@@ -127,7 +147,7 @@
 
         <div class="task-card">
           <div class="name">写入 Mania SR</div>
-          <form method="post" asp-page-handler="writeManiaSR">
+          <form method="post" asp-page-handler="writeManiaSR" id="writeManiaSRForm">
             <div class="param-row radio-row">
               <label>目标</label>
               <label class="radio-opt"><input type="radio" name="target" value="Stable" checked="@(Model.WriteManiaSR.Target == ManiaSRTarget.Stable)"> Stable</label>
@@ -137,6 +157,14 @@
               <label>算法</label>
               <label class="radio-opt"><input type="radio" name="algorithm" value="PPY" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.PPY)"> PPY</label>
               <label class="radio-opt"><input type="radio" name="algorithm" value="XXY" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.XXY)"> XXY</label>
+              <label class="radio-opt"><input type="radio" name="algorithm" value="SPM" checked="@(Model.WriteManiaSR.Algorithm == ManiaSRAlgorithm.SPM)"> SPM<span class="tip-icon" title="SPM 的 4K / 6K 输出是模型自身的等级值，不是星级（只有 7K 是星级量纲），写入后这些键数的谱面在游戏里显示的不是星数。SPM 只支持 4K/6K/7K，其它键数保持库中原值">?</span></label>
+            </div>
+            <div class="param-row" id="spmWarning" style="font-size:0.72rem;color:var(--warn);line-height:1.4;display:none">
+              <span>注意：SPM 的 4K / 6K 是等级值而非星级，只有 7K 是星级。</span>
+            </div>
+            <div class="param-row" style="font-size:0.75rem;color:var(--muted)">
+              <label style="min-width:auto">Stable 库中</label>
+              <span>@Model.LastWrittenDescription</span>
             </div>
             <div style="margin-top:10px">
               @if (!Model.IsRunning)
@@ -216,6 +244,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 <script>
 (function() {
+  // 用 SPM 写库时提示：4K / 6K 是模型等级而不是星级
+  var writeForm = document.getElementById('writeManiaSRForm');
+  if (writeForm) {
+    var spmWarning = document.getElementById('spmWarning');
+    var selectedAlgorithm = function () {
+      var alg = writeForm.querySelector('input[name="algorithm"]:checked');
+      return alg ? alg.value : null;
+    };
+
+    var syncSpmWarning = function () {
+      if (spmWarning) spmWarning.style.display = selectedAlgorithm() === 'SPM' ? '' : 'none';
+    };
+
+    writeForm.querySelectorAll('input[name="algorithm"]').forEach(function (radio) {
+      radio.addEventListener('change', syncSpmWarning);
+    });
+    syncSpmWarning();
+
+    writeForm.addEventListener('submit', function (e) {
+      if (selectedAlgorithm() !== 'SPM') return;
+      var ok = window.confirm(
+        'SPM 的 4K / 6K 结果是模型自身的等级值，不是星级（只有 7K 是星级量纲）。\n\n' +
+        '写入后 4K / 6K 谱面在游戏里显示的不再是星数，并会覆盖 osu! 原有的星级。\n\n' +
+        '确定继续写入 SPM？'
+      );
+      if (!ok) e.preventDefault();
+    });
+  }
+
   var logBody = document.getElementById('logBody');
   if (!logBody) return;
 

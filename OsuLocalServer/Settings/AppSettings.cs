@@ -109,6 +109,16 @@ public sealed class ApiV2Credentials
 public sealed class ManagementSettings
 {
     public string ManiaSRPackPath { get; set; } = Path.Combine(AppSettings.StorageDir, "mania_sr.msgpack");
+
+    /// <summary>上次写入 Stable 库使用的算法。</summary>
+    public string? LastWrittenAlgorithm { get; set; }
+    public DateTimeOffset? LastWrittenAt { get; set; }
+    public int LastWrittenCount { get; set; }
+
+    public string LastWrittenDescription =>
+        LastWrittenAlgorithm is null || LastWrittenAt is null
+            ? "未写入过"
+            : $"{LastWrittenAlgorithm}（{LastWrittenAt:yyyy-MM-dd HH:mm}，{LastWrittenCount} 张）";
 }
 
 public sealed class ManiaLabSettings

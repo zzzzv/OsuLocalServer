@@ -29,9 +29,8 @@ public class CreatePPCollectionTask
             return Task.CompletedTask;
         }
 
-        var bytes = File.ReadAllBytes(msgpackPath);
-        var data = MessagePackSerializer.Deserialize<Dictionary<string, ManiaSRData>>(bytes);
-        if (data is null || data.Count == 0)
+        var data = ManiaSRPackStore.Load(msgpackPath).Data;
+        if (data.Count == 0)
         {
             log.Warn("msgpack 数据为空");
             log.Info("请先运行「生成 Mania SR」任务");
@@ -48,7 +47,7 @@ public class CreatePPCollectionTask
         return Task.CompletedTask;
     };
 
-    private void ProcessStable(StableSettings stable, Dictionary<string, ManiaSRData> data, TaskLogger log)
+    private void ProcessStable(StableSettings stable, IReadOnlyDictionary<string, ManiaSRData> data, TaskLogger log)
     {
         if (!stable.IsAvailable)
         {
@@ -76,7 +75,7 @@ public class CreatePPCollectionTask
             data, stable.OsuRootPath, log, isStable: true, stable.BackupBeforeWrite);
     }
 
-    private void ProcessLazer(LazerSettings lazer, Dictionary<string, ManiaSRData> data, TaskLogger log)
+    private void ProcessLazer(LazerSettings lazer, IReadOnlyDictionary<string, ManiaSRData> data, TaskLogger log)
     {
         if (!lazer.IsAvailable)
         {
@@ -106,7 +105,7 @@ public class CreatePPCollectionTask
 
     private void CollectAndCreateCollections(
         IEnumerable<string> md5Hashes,
-        Dictionary<string, ManiaSRData> data,
+        IReadOnlyDictionary<string, ManiaSRData> data,
         string targetPath,
         TaskLogger log,
         bool isStable,
@@ -122,24 +121,28 @@ public class CreatePPCollectionTask
         {
             checkedCount++;
 
-            if (!data.TryGetValue(md5, out var sr) || sr is null)
+            if (!data.TryGetValue(md5, out var entry) || entry is null)
             {
                 skippedNoData++;
                 continue;
             }
 
-            if (sr.XXY is null || sr.PPY is null)
+            // XXY 与 PPY 都必须算出来了才能比较
+            if (entry.StateOf(ManiaSRAlgorithm.XXY) != SRState.Ok
+                || entry.StateOf(ManiaSRAlgorithm.PPY) != SRState.Ok
+                || entry.RatingOf(ManiaSRAlgorithm.XXY) is not { } xxy
+                || entry.RatingOf(ManiaSRAlgorithm.PPY) is not { } ppy)
             {
                 skippedZeroXxy++;
                 continue;
             }
 
             // XXY - PPY < 阈值，且 XXY/PPY 有效
-            if (sr.XXY.NM > 0 && sr.PPY.NM > MinPPY && sr.XXY.NM - sr.PPY.NM < Threshold)
+            if (xxy.NM > 0 && ppy.NM > MinPPY && xxy.NM - ppy.NM < Threshold)
                 nmHashes.Add(md5);
-            if (sr.XXY.HT > 0 && sr.PPY.HT > MinPPY && sr.XXY.HT - sr.PPY.HT < Threshold)
+            if (xxy.HT > 0 && ppy.HT > MinPPY && xxy.HT - ppy.HT < Threshold)
                 htHashes.Add(md5);
-            if (sr.XXY.DT > 0 && sr.PPY.DT > MinPPY && sr.XXY.DT - sr.PPY.DT < Threshold)
+            if (xxy.DT > 0 && ppy.DT > MinPPY && xxy.DT - ppy.DT < Threshold)
                 dtHashes.Add(md5);
         }
 
