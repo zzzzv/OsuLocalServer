@@ -1,4 +1,4 @@
-using OsuLocalServer.Lazer;
+using OsuLazer.Interop;
 using OsuLocalServer.Settings;
 using OsuLocalServer.Stable;
 
@@ -103,6 +103,6 @@ public class WriteManiaSRTask
 
         // Lazer 数据库只有单个 SR 字段，只写 NM
         var nmOnly = ratings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.NM);
-        return LazerRealm.WriteStarRatings(lazer.ClientRealmPath, nmOnly);
+        return new LazerDatabase(lazer.ClientRealmPath).WriteStarRatings(nmOnly);
     }
 }

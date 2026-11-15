@@ -1,11 +1,8 @@
-using System.Text.Json;
 using System.Diagnostics;
+using System.Text.Json;
 using osu.Game.Online.API;
+using OsuLazer.Interop;
 using OsuLocalServer.Settings;
-using Realms;
-using osu.Game.Beatmaps;
-using osu.Game.Collections;
-using osu.Game.Scoring;
 
 namespace OsuLocalServer.Lazer;
 
@@ -19,19 +16,14 @@ public static class LazerRoutes
     {
         PropertyNameCaseInsensitive = true,
     };
-    
+
     public static void MapLazerRoutes(this WebApplication app)
     {
-        try
-        {
-            var lazerDirectory = LazerPaths.ResolveLazerCurrentDirectory();
-            OsuLazerAssemblyResolver.Register(lazerDirectory);
-        }
-        catch
-        {
-            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Lazer");
-            logger.LogInformation("未检测到 Lazer — /api/lazer 端点不可用");
-        }
+        var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Lazer");
+
+        LazerHost.TryInitialize(out var error);
+        if (error is not null)
+            logger.LogInformation("未检测到 Lazer — /api/lazer 端点不可用：{Error}", error);
 
         var group = app.MapGroup("/api/lazer");
         group.AddEndpointFilter(LazerAvailabilityFilter);
@@ -55,16 +47,16 @@ public static class LazerRoutes
     }
 
     private static IResult HandleScores(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<ScoreInfo>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
+        RunQuery(() => Database(svc).Query(LazerEntity.Scores, rql, depth ?? 0, noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
     private static IResult HandleBeatmaps(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapInfo>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
+        RunQuery(() => Database(svc).Query(LazerEntity.Beatmaps, rql, depth ?? 0, noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
     private static IResult HandleBeatmapSets(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapSetInfo>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
+        RunQuery(() => Database(svc).Query(LazerEntity.BeatmapSets, rql, depth ?? 0, noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
     private static IResult HandleCollections(string rql, int? depth, SettingService svc, ILoggerFactory loggerFactory, string[]? noExpand = null) =>
-        RunQuery(() => LazerRealm.Query(svc.Settings.Lazer.ClientRealmPath, rql, depth ?? 0, realm => realm.All<BeatmapCollection>().Filter(rql), noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
+        RunQuery(() => Database(svc).Query(LazerEntity.Collections, rql, depth ?? 0, noExpand?.ToHashSet()), loggerFactory.CreateLogger("LazerRoutes"));
 
     private static IResult HandleFile(string hash, SettingService svc)
     {
@@ -73,10 +65,9 @@ public static class LazerRoutes
         if (string.IsNullOrWhiteSpace(hash) || hash.Length < 3)
             return Results.BadRequest("无效的文件哈希。");
 
-        var dataDir = Path.GetDirectoryName(svc.Settings.Lazer.ClientRealmPath) ?? LazerPaths.GetDefaultDataDirectory();
-        var filePath = Path.Combine(dataDir, "files", hash[..1], hash[..2], hash);
-        if (!File.Exists(filePath))
-            return Results.NotFound($"文件未找到: {filePath}");
+        var store = new LazerFileStore(Path.GetDirectoryName(svc.Settings.Lazer.ClientRealmPath));
+        if (!store.TryGetFilePath(hash, out var filePath))
+            return Results.NotFound($"文件未找到: {store.GetFilePath(hash)}");
 
         return Results.File(filePath, Utils.GetContentType(filePath), Path.GetFileName(filePath));
     }
@@ -90,7 +81,7 @@ public static class LazerRoutes
         if (!File.Exists(path))
             return Results.Problem("未找到 client.realm。", statusCode: 404);
 
-        var result = LazerRealm.AddToCollection(path, request.Name, request.BeatmapMd5Hashes, request.Overwrite);
+        var result = new LazerDatabase(path).AddToCollection(request.Name, request.BeatmapMd5Hashes, request.Overwrite);
         return Results.Ok(result);
     }
 
@@ -109,8 +100,8 @@ public static class LazerRoutes
 
         try
         {
-            var sr = LazerRulesets.CalcSRFromContent(beatmapContent, mods);
-            return Results.Ok(new { starRating = sr });
+            var starRating = LazerStarRatingCalculator.Default.CalcSRFromContent(beatmapContent, mods);
+            return Results.Ok(new { starRating });
         }
         catch (Exception ex)
         {
@@ -130,9 +121,11 @@ public static class LazerRoutes
         if (!File.Exists(path))
             return Results.Problem("未找到 client.realm。", statusCode: 404);
 
-        var updated = LazerRealm.WriteStarRatings(path, request.StarRatings);
+        var updated = new LazerDatabase(path).WriteStarRatings(request.StarRatings);
         return Results.Ok(new { updated });
     }
+
+    private static LazerDatabase Database(SettingService svc) => new(svc.Settings.Lazer.ClientRealmPath);
 
     private static string FormatExceptionDetail(Exception ex)
     {
@@ -148,7 +141,7 @@ public static class LazerRoutes
         return sb.ToString().TrimEnd();
     }
 
-    private static IResult RunQuery(Func<List<object>> queryFunc, ILogger logger)
+    private static IResult RunQuery(Func<IReadOnlyList<object>> queryFunc, ILogger logger)
     {
         try
         {

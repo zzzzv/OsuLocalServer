@@ -1,5 +1,5 @@
 using MessagePack;
-using OsuLocalServer.Lazer;
+using OsuLazer.Interop;
 using OsuLocalServer.Settings;
 using OsuLocalServer.Stable;
 using OsuParsers.Decoders;
@@ -84,7 +84,7 @@ public class CreatePPCollectionTask
         }
 
         List<string> md5Hashes;
-        using (var realm = LazerRealm.OpenRealm(lazer.ClientRealmPath))
+        using (var realm = new LazerDatabase(lazer.ClientRealmPath).Open())
         {
             // 在 C# 中过滤 Mania + Ranked (Realm 表达式树不支持 ?. 和某些类型转换)
             var rankedBeatmaps = realm.All<BeatmapInfo>()
@@ -193,7 +193,7 @@ public class CreatePPCollectionTask
 
         try
         {
-            var result = LazerRealm.AddToCollection(clientRealmPath, name, hashes.ToArray(), overwrite: true);
+            var result = new LazerDatabase(clientRealmPath).AddToCollection(name, hashes, overwrite: true);
             log.Info($"收藏夹「{name}」创建/更新完成: {result.BeatmapCount} 个谱面");
         }
         catch (Exception ex)

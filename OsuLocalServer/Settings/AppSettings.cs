@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using OsuLocalServer.Lazer;
+using OsuLazer.Interop;
 using OsuLocalServer.Stable;
 
 namespace OsuLocalServer.Settings;
@@ -79,12 +79,12 @@ public sealed class AppSettings
 
 public sealed class LazerSettings
 {
-    public string ClientRealmPath { get; set; } = Path.Combine(LazerPaths.GetDefaultDataDirectory(), "client.realm");
+    public string ClientRealmPath { get; set; } = LazerHost.DefaultClientRealmPath;
 
     [JsonIgnore]
     public bool Disable { get; set; }
 
-    public bool IsAvailable => !Disable && LazerPaths.IsAvailable();
+    public bool IsAvailable => !Disable && LazerHost.IsInstalled;
 }
 
 public sealed class StableSettings

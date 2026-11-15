@@ -10,9 +10,13 @@
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
     <ServerGarbageCollection>false</ServerGarbageCollection>
-    <Version>0.5.0</Version>
-    <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
+    <Version>0.5.1</Version>
   </PropertyGroup>
+
+  <!--
+    lazer 的 osu.Game / osu.Framework / Realm 引用（以及 OsuLazer.Interop 源码本身）
+    由 OsuLazer.Interop 包的 buildTransitive props 提供，无需在此重复声明。
+  -->
 
   <!-- publish 后在输出文件名中追加版本号 -->
   <Target Name="AddVersionToPublishOutput" AfterTargets="Publish" Condition="'$(Version)' != ''">
@@ -21,22 +25,18 @@
   </Target>
 
   <ItemGroup>
-    <Reference Include="osu.Game">
-      <HintPath>$(OsuLazerCurrentDir)\osu.Game.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="osu.Framework">
-      <HintPath>$(OsuLazerCurrentDir)\osu.Framework.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <!-- 0.1.1 起包的 props 放在 build/（不是 buildTransitive/），不会传递到引用本项目的工程，
+         所以这里不需要 PrivateAssets="all" 也不会出现 CS0436。 -->
+    <PackageReference Include="OsuLazer.Interop" Version="0.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 只有本项目的 mania 相关任务需要直接使用 mania mod 类型 -->
     <Reference Include="osu.Game.Rulesets.Mania">
       <HintPath>$(OsuLazerCurrentDir)\osu.Game.Rulesets.Mania.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="Realm">
-      <HintPath>$(OsuLazerCurrentDir)\Realm.dll</HintPath>
-      <Private>false</Private>
-    </Reference>  </ItemGroup>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="3.1.7" />

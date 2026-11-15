@@ -7,27 +7,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
-    <OsuLazerCurrentDir>$(LocalAppData)\osulazer\current</OsuLazerCurrentDir>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Reference Include="osu.Game">
-      <HintPath>$(OsuLazerCurrentDir)\osu.Game.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="osu.Framework">
-      <HintPath>$(OsuLazerCurrentDir)\osu.Framework.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="osu.Game.Rulesets.Mania">
-      <HintPath>$(OsuLazerCurrentDir)\osu.Game.Rulesets.Mania.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Realm">
-      <HintPath>$(OsuLazerCurrentDir)\Realm.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />

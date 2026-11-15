@@ -1,11 +1,12 @@
 using System.Collections.Concurrent;
-using OsuLocalServer.Lazer;
+using OsuLazer.Interop;
 using OsuLocalServer.Settings;
 using OsuLocalServer.Stable;
 using OsuParsers.Database.Objects;
 using OsuParsers.Decoders;
 using OsuParsers.Enums;
 using osu.Game.Beatmaps;
+using osu.Game.Rulesets.Mania.Mods;
 using StarRatingRebirth;
 using Spm = SPMRating;
 
@@ -162,8 +163,9 @@ public class GenerateManiaSRTask
         List<WorkItem> work,
         TaskLogger log)
     {
-        var dataDir = Path.GetDirectoryName(lazer.ClientRealmPath)!;
-        using var realm = LazerRealm.OpenRealm(lazer.ClientRealmPath);
+        var database = new LazerDatabase(lazer.ClientRealmPath);
+        var fileStore = new LazerFileStore(database.DataDirectory);
+        using var realm = database.Open();
 
         var entries = new List<(string MD5Hash, string Hash)>();
         foreach (var bm in realm.All<BeatmapInfo>())
@@ -177,8 +179,7 @@ public class GenerateManiaSRTask
         int added = 0, missingFile = 0;
         foreach (var entry in entries)
         {
-            var osuPath = Path.Combine(dataDir, "files", entry.Hash[..1], entry.Hash[..2], entry.Hash);
-            if (!File.Exists(osuPath))
+            if (!fileStore.TryGetFilePath(entry.Hash, out var osuPath))
             {
                 missingFile++;
                 continue;
@@ -239,7 +240,7 @@ public class GenerateManiaSRTask
             {
                 try
                 {
-                    var ppy = LazerRulesets.CalcManiaSR(item.BeatmapPath);
+                    var ppy = CalcLazerManiaSR(item.BeatmapPath);
                     entry = entry.With(ManiaSRAlgorithm.PPY, SRState.Ok, ppy);
                     Interlocked.Increment(ref ppyOk);
                 }
@@ -400,5 +401,18 @@ public class GenerateManiaSRTask
         }
 
         return (SRState.Ok, new StarRating(values[0], values[1], values[2]), null);
+    }
+
+    /// <summary>
+    /// OsuLazer.Interop 只提供通用的单次 SR 计算，mania 需要的 NM/HT/DT 组合由这里组装。
+    /// </summary>
+    private static StarRating CalcLazerManiaSR(string beatmapPath)
+    {
+        var calculator = LazerStarRatingCalculator.Default;
+
+        return new StarRating(
+            NM: calculator.CalcSR(beatmapPath, []),
+            HT: calculator.CalcSR(beatmapPath, [new ManiaModHalfTime()]),
+            DT: calculator.CalcSR(beatmapPath, [new ManiaModDoubleTime()]));
     }
 }
