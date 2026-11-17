@@ -10,7 +10,7 @@
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
     <ServerGarbageCollection>false</ServerGarbageCollection>
-    <Version>0.5.1</Version>
+    <Version>0.5.2</Version>
   </PropertyGroup>
 
   <!--
@@ -27,7 +27,7 @@
   <ItemGroup>
     <!-- 0.1.1 起包的 props 放在 build/（不是 buildTransitive/），不会传递到引用本项目的工程，
          所以这里不需要 PrivateAssets="all" 也不会出现 CS0436。 -->
-    <PackageReference Include="OsuLazer.Interop" Version="0.1.1" />
+    <PackageReference Include="OsuLazer.Interop" Version="0.1.2" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,6 +7,7 @@ using OsuParsers.Decoders;
 using OsuParsers.Enums;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Mania.Mods;
+using Realms;
 using StarRatingRebirth;
 using Spm = SPMRating;
 
@@ -61,36 +62,48 @@ public class GenerateManiaSRTask
             log.Info($"已把 {ResetFailedSlots(data)} 个失败槽位重置为未计算，本次会重试");
 
         var work = new List<WorkItem>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         int ppyImported = 0;
 
         var stable = settings.Settings.Stable;
+        var lazer = settings.Settings.Lazer;
+        bool lazerAvailable = lazer.IsAvailable;
+
         if (stable.IsAvailable)
-            ppyImported = CollectStable(stable, data, work, log);
+            ppyImported = CollectStable(stable, data, work, seen, log, lazerAvailable);
         else
             log.Warn("Stable 不可用，跳过（PPY 无法从 osu!.db 导入）");
 
-        var lazer = settings.Settings.Lazer;
-        if (lazer.IsAvailable)
-            CollectLazer(lazer, data, work, log);
+        if (lazerAvailable)
+            CollectLazer(lazer, data, work, seen, log);
         else
-            log.Warn("Lazer 不可用，跳过");
+            log.Warn("Lazer 不可用，跳过（PPY 未计算的条目不进入待计算）");
 
         if (ppyImported > 0)
             SaveData(data, packPath, log, quiet: true);
 
-        Process(data, work, packPath, log, lazer.IsAvailable, ct);
+        // 只有两个来源都扫过，"没出现过" 才能确定是孤儿，否则会误删另一个库里的谱面
+        if (stable.IsAvailable && lazerAvailable)
+            PruneOrphans(data, seen, packPath, log);
+        else
+            log.Warn("Stable / Lazer 未全部可用，跳过孤儿条目清理");
+
+        Process(data, work, packPath, log, lazerAvailable, ct);
 
         SaveData(data, packPath, log);
     };
 
     /// <summary>
     /// 从 osu!.db 枚举 Mania 谱面：建条目 + 首次导入 PPY + 收集待计算的谱面路径。
+    /// 只有确实有 Pending 槽位的谱面才会进入 <paramref name="work"/>。
     /// </summary>
-    private static int CollectStable(
+    private int CollectStable(
         StableSettings stable,
         ConcurrentDictionary<string, ManiaSRData> data,
         List<WorkItem> work,
-        TaskLogger log)
+        HashSet<string> seen,
+        TaskLogger log,
+        bool lazerAvailable)
     {
         var osuDbPath = Path.Combine(stable.OsuRootPath, "osu!.db");
         var osuDb = DatabaseDecoder.DecodeOsu(osuDbPath);
@@ -100,30 +113,36 @@ public class GenerateManiaSRTask
 
         log.Info($"Stable：共 {beatmaps.Count} 个 Mania 谱面");
 
-        int imported = 0, missing = 0;
+        int imported = 0, missing = 0, queued = 0;
         foreach (var bm in beatmaps)
         {
             var md5 = bm.MD5Hash!;
             var entry = data.GetOrAdd(md5, ManiaSRData.Empty);
-            var path = bm.GetBeatmapPath(stable.OsuRootPath);
-            work.Add(new WorkItem(md5, path));
+            seen.Add(md5);
 
-            if (entry.StateOf(ManiaSRAlgorithm.PPY) != SRState.Pending)
-                continue;
-
-            var ppy = ReadPpyFromStable(bm);
-            if (ppy.IsValid)
+            if (entry.StateOf(ManiaSRAlgorithm.PPY) == SRState.Pending)
             {
-                data[md5] = entry.With(ManiaSRAlgorithm.PPY, SRState.Ok, ppy);
-                imported++;
+                var ppy = ReadPpyFromStable(bm);
+                if (ppy.IsValid)
+                {
+                    entry = entry.With(ManiaSRAlgorithm.PPY, SRState.Ok, ppy);
+                    data[md5] = entry;
+                    imported++;
+                }
+                else
+                {
+                    missing++;
+                }
             }
-            else
+
+            if (NeedsWork(entry, lazerAvailable))
             {
-                missing++;
+                work.Add(new WorkItem(md5, bm.GetBeatmapPath(stable.OsuRootPath)));
+                queued++;
             }
         }
 
-        log.Info($"PPY 导入：新增 {imported} 条，库中无可用 PPY {missing} 条（保持未计算）");
+        log.Info($"PPY 导入：新增 {imported} 条，库中无可用 PPY {missing} 条（保持未计算）；待计算 {queued} 条");
         return imported;
     }
 
@@ -157,10 +176,15 @@ public class GenerateManiaSRTask
         }
     }
 
-    private static void CollectLazer(
+    /// <summary>
+    /// 从 client.realm 枚举 Mania 谱面。模式过滤交给 Realm（RQL），并且只对
+    /// 确实需要计算的谱面做文件存在性检查——全量 File.Exists 是这一阶段的耗时大头。
+    /// </summary>
+    private void CollectLazer(
         LazerSettings lazer,
         ConcurrentDictionary<string, ManiaSRData> data,
         List<WorkItem> work,
+        HashSet<string> seen,
         TaskLogger log)
     {
         var database = new LazerDatabase(lazer.ClientRealmPath);
@@ -168,17 +192,27 @@ public class GenerateManiaSRTask
         using var realm = database.Open();
 
         var entries = new List<(string MD5Hash, string Hash)>();
-        foreach (var bm in realm.All<BeatmapInfo>())
+        foreach (var bm in realm.All<BeatmapInfo>().Filter("Ruleset.ShortName == \"mania\""))
         {
-            if (bm.Ruleset?.ShortName == "mania" && !string.IsNullOrEmpty(bm.MD5Hash) && !string.IsNullOrEmpty(bm.Hash))
+            if (!string.IsNullOrEmpty(bm.MD5Hash) && !string.IsNullOrEmpty(bm.Hash))
                 entries.Add((bm.MD5Hash, bm.Hash));
         }
 
         log.Info($"Lazer：共 {entries.Count} 个 Mania 谱面");
 
-        int added = 0, missingFile = 0;
+        int added = 0, missingFile = 0, queued = 0, fromStable = 0;
         foreach (var entry in entries)
         {
+            // Stable 已经收录过（路径与待算状态都已确定），不重复检查文件
+            if (!seen.Add(entry.MD5Hash))
+            {
+                fromStable++;
+                continue;
+            }
+
+            if (data.TryGetValue(entry.MD5Hash, out var existing) && !NeedsWork(existing, lazerAvailable: true))
+                continue;
+
             if (!fileStore.TryGetFilePath(entry.Hash, out var osuPath))
             {
                 missingFile++;
@@ -189,9 +223,51 @@ public class GenerateManiaSRTask
                 added++;
 
             work.Add(new WorkItem(entry.MD5Hash, osuPath));
+            queued++;
         }
 
-        log.Info($"Lazer：新增 {added} 条，文件缺失 {missingFile} 条");
+        log.Info($"Lazer：新增 {added} 条，待计算 {queued} 条，文件缺失 {missingFile} 条，已在 Stable 收录 {fromStable} 条");
+    }
+
+    /// <summary>
+    /// 该条目是否还有本次要算的槽位。PPY 需要 Lazer 可用，XXY / SPM 取决于开关。
+    /// 已停用的算法、Lazer 不可用时的 PPY 都不算，否则任务每轮都会空跑一遍全部谱面。
+    /// </summary>
+    private bool NeedsWork(ManiaSRData entry, bool lazerAvailable) =>
+        (lazerAvailable && entry.StateOf(ManiaSRAlgorithm.PPY) == SRState.Pending)
+        || (ComputeXxy && entry.StateOf(ManiaSRAlgorithm.XXY) == SRState.Pending)
+        || (ComputeSpm && entry.StateOf(ManiaSRAlgorithm.SPM) == SRState.Pending);
+
+    /// <summary>
+    /// 清掉 Stable / Lazer 里都已不存在的条目：它们永远算不出来，只会让数据包越滚越大。
+    /// 清理前先备份整包，避免误删后要重算。
+    /// </summary>
+    private static void PruneOrphans(
+        ConcurrentDictionary<string, ManiaSRData> data,
+        HashSet<string> seen,
+        string packPath,
+        TaskLogger log)
+    {
+        var orphans = new List<string>();
+        foreach (var key in data.Keys)
+        {
+            if (!seen.Contains(key))
+                orphans.Add(key);
+        }
+
+        if (orphans.Count == 0)
+            return;
+
+        ManiaSRPackStore.Backup(packPath);
+
+        int removed = 0;
+        foreach (var key in orphans)
+        {
+            if (data.TryRemove(key, out _))
+                removed++;
+        }
+
+        log.Info($"已清理 {removed} 条孤儿条目（Stable / Lazer 中都已不存在），清理前已备份为 .bakN");
     }
 
     private void Process(
@@ -202,23 +278,21 @@ public class GenerateManiaSRTask
         bool lazerAvailable,
         CancellationToken ct)
     {
+        // work 里只放确实有 Pending 槽位的谱面，所以进度分母就是待计算数，
+        // 已算完的谱面不会让循环再空跑一遍。
         // Stable 与 Lazer 可能有同一张谱，先出现（Stable 优先）的路径胜出
         var items = work
             .GroupBy(w => w.MD5Hash, StringComparer.Ordinal)
             .Select(g => g.First())
             .ToList();
 
-        var pending = items.Count(i =>
+        if (items.Count == 0)
         {
-            var e = data[i.MD5Hash];
-            return e.StateOf(ManiaSRAlgorithm.PPY) == SRState.Pending
-                || (ComputeXxy && e.StateOf(ManiaSRAlgorithm.XXY) == SRState.Pending)
-                || (ComputeSpm && e.StateOf(ManiaSRAlgorithm.SPM) == SRState.Pending);
-        });
-
-        log.Info($"待计算 {pending} 个谱面（共 {items.Count} 个）");
-        if (pending == 0)
+            log.Info("没有待计算的谱面");
             return;
+        }
+
+        log.Info($"待计算 {items.Count} 个谱面");
 
         int done = 0, written = 0;
         int ppyOk = 0, ppyFailed = 0;
