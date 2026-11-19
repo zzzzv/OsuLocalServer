@@ -20,41 +20,15 @@ osu本地数据服务
 
 页面 `/management`，左侧配置任务、右侧实时日志（SignalR 推送），同一时间只运行一个任务。
 
-### 生成 Mania SR
+![管理页面](docs/management.png)
 
-枚举 stable（`osu!.db`）与 Lazer（`client.realm`）中的 Mania 谱面，计算各算法 SR，保存到 `mania_sr.msgpack`。
+- **生成 Mania SR** — 枚举 stable（`osu!.db`）与 Lazer（`client.realm`）中的 Mania 谱面，计算 PPY / XXY / SPM，存入 `mania_sr.msgpack`。PPY 只在首次导入时读库，之后以 msgpack 为准；支持断点续跑。
+- **写入 Mania SR** — 写回 `osu!.db`（NM / HT / DT 三槽）或 `client.realm`（仅 NM）。只写该算法有值的谱面，不退回其它算法，因此库里不会混用多种算法。
+- **创建 PP 收藏夹** — 筛选 `XXY - PPY < 阈值` 且 `PPY > 下限`，创建 `PP` / `PP HT` / `PP DT` 收藏夹。
 
-| 算法 | 来源 |
-| --- | --- |
-| PPY | 只能从 `osu!.db` 的 `ManiaStarRating` 读取（无法调用 stable 本身计算），且**只在首次导入时读库**，之后以 msgpack 为准 |
-| XXY | 本地用 StarRatingRebirth 计算 |
-| SPM | 本地用 SPMRating 计算，仅支持 4K / 6K / 7K |
+> **SPM 的 4K / 6K 输出是模型自身的等级值，不是星级**，只有 7K 是星级量纲，写入后游戏内显示的不再是星数。
 
-- 每个算法槽位带状态：**未计算**（下次补算）、**有值**、**失败**、**不适用**。失败与不适用是终态，不会反复重试；勾选「重算失败项」可手动重试。
-- `osu!.db` 里的 NM / HT / DT 三槽不管被写成 XXY 还是 SPM，都不影响后续生成，因为只有 PPY 首次导入会读库。库被本工具以外的东西改动时，用「重新导入 PPY」刷新。
-- 参数：并行数、计算 XXY / 计算 SPM、记录错误、阶段写入（每 5000 条落盘）。
-- 支持断点续跑，已有值的槽位直接跳过。
-
-### 写入 Mania SR
-
-把 msgpack 中的结果写回本地数据库，可选 PPY / XXY / SPM：
-
-| 目标 | 位置 | 写入字段 |
-| --- | --- | --- |
-| Stable | `osu!.db` | `ManiaStarRating` 的 NM / HT / DT 三槽 |
-| Lazer | `client.realm` | `BeatmapInfo.StarRating`（仅 NM，只影响过滤与排序） |
-
-只写该算法有值的谱面；未计算 / 失败 / 不适用的谱面保持库中原值，**不会退回其它算法**，因此不会出现一个库里混着多种算法的 SR。写入完成后页面会显示库中当前算法、写入时间与条数。
-
-> **SPM 的 4K / 6K 输出是模型自身的等级值，不是星级**，只有 7K 是星级量纲。选择 SPM 写入时会弹窗确认，写入后 4K / 6K 谱面在游戏内显示的不再是星数。
-
-### 创建 PP 收藏夹
-
-筛选 `XXY - PPY < 阈值` 且 `PPY > 下限` 的谱面，在 Stable（`collection.db`）或 Lazer（`client.realm`）中创建 `PP` / `PP HT` / `PP DT` 三个收藏夹。XXY 与 PPY 必须都已算出，否则跳过。
-
-### 数据文件
-
-`mania_sr.msgpack`（默认位于 `%LOCALAPPDATA%\OsuLocalServer`）为紧凑二进制格式：每条记录是 `[状态位, PPY, XXY, SPM]`，其中的 SR 是 `[NM, HT, DT]`，不写字段名。旧格式在首次加载时自动迁移，原文件备份为 `.bakN`。同一文件通过 `/api/management/mania-sr/msgpack` 下发给前端。
+`mania_sr.msgpack`（默认 `%LOCALAPPDATA%\OsuLocalServer`）为紧凑二进制格式：每条记录 `[状态位, PPY, XXY, SPM]`，SR 为 `[NM, HT, DT]`，不写字段名；旧格式首次加载时自动迁移并备份为 `.bakN`。
 
 ## API
 
